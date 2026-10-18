@@ -15,11 +15,9 @@ Use quoted ISO timestamps with a timezone, e.g. `"2026-10-17T14:00:00+08:00"`. L
 
 Math supports `\( ... \)`, `\[ ... \]`, `$ ... $` and `$$ ... $$`. MathJax is bundled locally; the page does not require a math CDN. Click a screenshot, or focus it and press Enter, to enlarge it; use Escape or Close to dismiss.
 
-## Concepts and links
+## Independent concept notes
 
-Keep public concept references in `notes/SmallNote/*.md`. They are discovered automatically. Preserve existing explicit anchors such as `<a id="wald协议"></a>`.
-
-From a paper, use `../SmallNote/知识点汇总.md#wald协议`. From the concept file, use `../UPPAN/index.md`. The builder converts links to website note URLs and checks targets and anchors. The old combined `back/Article.md` is not published or counted.
+Keep standalone knowledge notes in `notes/SmallNote/*.md`. They appear under Concepts and are discovered automatically. Organize them with headings and read them independently; no links to or from paper notes are required. Paper notes remain focused on research tasks, architecture and modules.
 
 ## Local preview
 

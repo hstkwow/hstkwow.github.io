@@ -29,7 +29,3 @@ ARNet 首先将 MS 图像上采样至与 PAN 相同尺寸，再沿通道维度�
 对 \(S\) 执行卷积，再用输入特征**预测**的 \(M,B\) 做缩放和偏移，输出最终特征：\[ y=(SK\otimes S)\odot M+B. \]
 
 ![截屏2026-10-17 09.13.42](images/figure-02.png)
-
-## 相关知识点
-
-- [知识点汇总：ReLU 和 LeakyReLU](../SmallNote/知识点汇总.md#relu-和-leakyrelu)

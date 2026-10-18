@@ -10,15 +10,11 @@ paper_url: "https://openaccess.thecvf.com/content/CVPR2026/html/Cao_Cross-Scale_
 
 <!-- 暂未核验到正式出版 DOI，保留 CVF 正式论文页面。 -->
 
-
-
 ![截屏2026-09-19 16.08.07](images/framework.png)
 
 让PAN来引导MS进行融合图像
 
 ## 核心模块
-
-
 
 ### Scale Aware Patchify
 

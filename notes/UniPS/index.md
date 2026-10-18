@@ -13,8 +13,6 @@ publication_status: "预印本；暂未核验到正式期刊或会议出版页"
 
 ## 核心模块
 
-
-
 ### Modality-interleaved Transformer MiT
 
 将LRMS逐波段映射到潜在空间映射空间，用到了Cayley formulation，是让矩阵更佳

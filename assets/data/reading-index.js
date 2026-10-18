@@ -145,6 +145,107 @@ window.READING_NOTES = [
     "search_text": " 研究任务 \n 遥感图像中的地物尺寸和形状差异显著，例如小型车辆、大型建筑和细长道路。传统卷积的采样窗口为固定大小的正方形，采样点数量也固定，难以适应不同地物的尺度与长宽比，导致特征提取不充分。已有可变形卷积虽然可以调整采样位置，但采样点数量仍固定，且逐点学习偏移会增加开销。 \n 整体架构：ARNet \n   \n ARNet 首先将 MS 图像上采样至与 PAN 相同尺寸，再沿通道维度拼接。随后，通过由 ARConv 构成的残差块和下采样模块提取多尺度特征，再利用上采样与跳跃连接恢复空间细节。最后，将预测的细节残差加回上采样后的 MS，得到 HRMS 图像。 \n 核心模块：ARConv \n 学习采样范围 \n 输入特征经过 FE 和两个 HWL， 预测 每个位置的卷积核高度  \\(h\\) 、宽度  \\(w\\) ，决定“在多大范围内取信息”。 \n 确定采样点并生成采样图 \n 根据高度、宽度的平均值选择  \\(k_h\\times k_w\\)  个采样点；再根据各位置的  \\(h,w\\)  调整采样间距，通过双线性插值取值、重排，得到采样图  \\(S\\) 。 \n 卷积提取与自适应调制 \n 对  \\(S\\)  执行卷积，再用输入特征 预测 的  \\(M,B\\)  做缩放和偏移，输出最终特征： \\[ y=(SK\\otimes S)\\odot M+B. \\]  \n   \n 相关知识点 \n \n  知识点汇总：ReLU 和 LeakyReLU  \n "
   },
   {
+    "id": "RAFNet",
+    "kind": "paper",
+    "title": "RAFNet",
+    "topic": "Pansharpening",
+    "tags": [],
+    "started_at": "2026-09-24T08:59:47+08:00",
+    "finished_at": "2026-10-07T10:07:49+08:00",
+    "span_seconds": 1127282.0,
+    "status": "completed",
+    "paper_url": "https://doi.org/10.1016/j.isprsjprs.2026.07.016",
+    "publication_status": "",
+    "summary": "",
+    "source": "notes/RAFNet/index.md",
+    "html": "<h2 id=\"_1\">研究任务</h2>\n<p>现有全色锐化模型通常针对单颗卫星单独训练，不同卫星在空间分辨率、光谱波段配置和噪声特性上的差异，使模型难以直接迁移到其他卫星。若将多卫星数据混合训练，模型又容易把<strong>通用空间规律</strong>与<strong>卫星特有的光谱特征</strong>混在一起；而普通深度学习模型还缺少明确的物理约束。如何在一个模型中处理多颗卫星的数据，同时区分卫星特有信息与当前图像自身的特征，并兼顾物理可解释性和融合效果。</p>\n<h2 id=\"_2\">整体架构</h2>\n<p><img alt=\"截屏2026-09-29 19.24.05\" src=\"notes/RAFNet/images/framework.png\" loading=\"lazy\" decoding=\"async\"></p>\n<p><strong>论文先把 LRMS 上采样得到初始 Z，再复制一份作为初始 U。之后交替更新两者：Z 结合 LRMS、PAN 的观测约束，通过 ProxNet-Z 改善当前图像的</strong>空间和光谱特征<strong>；U 根据更新后的 Z，通过 ProxNet-U 加入对应</strong>卫星的先验知识**，再帮助下一轮 Z 的重建。WCG 根据卫星的波段信息生成相应的退化算子。整个过程重复 3 轮，最终输出 Z，作为融合后的 HRMS 图像。</p>\n<p><img alt=\"截屏2026-10-02 19.23.55\" src=\"notes/RAFNet/images/figure-02.png\" loading=\"lazy\" decoding=\"async\"></p>\n<h2 id=\"_3\">核心模块</h2>\n<h3 id=\"wcg\">WCG：退化算子生成</h3>\n<p>输入各波段的中心波长，将波长转换成特征向量，Transformer 分析波段之间的关系，生成卷积核，用于模拟该卫星的<strong>空间和光谱退化算子</strong>。</p>\n<p><img alt=\"截屏2026-10-02 19.40.43\" src=\"notes/RAFNet/images/figure-03.png\" loading=\"lazy\" decoding=\"async\"></p>\n<h3 id=\"proxnet-z\">ProxNet-Z：图像先验</h3>\n<p>采用四层 U-Net，在编码器和解码器的每个 Transformer 前加入<strong>空间—通道提示模块</strong>：输入特征经 GAP、全连接层和 Softmax 计算组合权重，对 5 组可学习基础模板加权，生成当前图像的空间提示和通道提示；两种提示分别与特征逐元素相乘，再经通道拼接、1×1 卷积和残差连接融合，随后交给 Transformer 处理，最终重建修正后的 HRMS。</p>\n<p><img alt=\"截屏2026-10-02 19.40.57\" src=\"notes/RAFNet/images/figure-04.png\" loading=\"lazy\" decoding=\"async\"></p>\n<h3 id=\"proxnet-u\">ProxNet-U：卫星先验</h3>\n<p>ProxNet-U 的流程分为“<strong>预训练高质量先验</strong>”和“<strong>在全色锐化中使用先验</strong>”两部分。通过三级编码器中的 3D 卷积、光谱注意力和 FFN 提取特征，空间尺寸从 <code>H×W</code> 下采样到 <code>h×w</code>。每个空间位置的 <code>B×C</code> 个特征被整理成一个向量，准备进行码本匹配。</p>\n<h4 id=\"_4\">学习共享码本</h4>\n<p>，所有卫星的 HRMS 图像使用同一个共享码本。每个特征向量进行多轮（J1）残差量化：选取最近的码向量、减去它、继续匹配剩余误差。累加选中的码向量，再通过解码器重建原图，利用重建损失和量化损失联合训练编码器、码本与解码器。</p>\n<h4 id=\"_5\">学习卫星特定码本</h4>\n<p>，在共享码本的基础上，为各卫星加入专用码本。前 3 轮量化使用共享码本，后 3 轮根据卫星来源选择专用码本，表示剩余特征。继续通过自重建训练，让两类码本分别表示共有规律和卫星特有变化。</p>\n<h4 id=\"_6\">接入全色锐化网络</h4>\n<p>，输入当前迭代的中间结果，执行同样的“编码 → 共享与专用码本残差量化 → 累加码向量 → 解码”过程，输出修正结果。此时<strong>冻结码本和解码器，只训练编码器</strong>，让输入特征适配已经学好的高质量先验。</p>\n<h2 id=\"_7\">相关知识点</h2>\n<ul>\n<li><a href=\"papers.html?note=concepts%2F%E7%9F%A5%E8%AF%86%E7%82%B9%E6%B1%87%E6%80%BB#%E6%B7%B1%E5%BA%A6%E5%B1%95%E5%BC%80\">知识点汇总：深度展开</a></li>\n<li><a href=\"papers.html?note=concepts%2F%E7%9F%A5%E8%AF%86%E7%82%B9%E6%B1%87%E6%80%BB#%E5%8D%B7%E7%A7%AF%E5%AD%97%E5%85%B8%E6%BB%A4%E6%B3%A2%E5%99%A8filter\">知识点汇总：卷积字典/滤波器(filter)</a></li>\n<li><a href=\"papers.html?note=concepts%2F%E7%9F%A5%E8%AF%86%E7%82%B9%E6%B1%87%E6%80%BB#%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%85%AC%E5%BC%8F\">知识点汇总：贝叶斯公式</a></li>\n<li><a href=\"papers.html?note=concepts%2F%E7%9F%A5%E8%AF%86%E7%82%B9%E6%B1%87%E6%80%BB#%E6%9C%80%E5%A4%A7%E5%90%8E%E9%AA%8C\">知识点汇总：最大后验</a></li>\n<li><a href=\"papers.html?note=concepts%2F%E7%9F%A5%E8%AF%86%E7%82%B9%E6%B1%87%E6%80%BB#%E5%85%88%E9%AA%8C%E9%A1%B9prior\">知识点汇总：先验项</a></li>\n<li><a href=\"papers.html?note=concepts%2F%E7%9F%A5%E8%AF%86%E7%82%B9%E6%B1%87%E6%80%BB#%E8%A7%82%E6%B5%8B%E6%A8%A1%E5%9E%8B\">知识点汇总：观测模型</a></li>\n<li><a href=\"papers.html?note=concepts%2F%E7%9F%A5%E8%AF%86%E7%82%B9%E6%B1%87%E6%80%BB#%E6%AD%A3%E5%88%99%E5%8C%96%E9%A1%B9\">知识点汇总：正则化项</a></li>\n<li><a href=\"papers.html?note=concepts%2F%E7%9F%A5%E8%AF%86%E7%82%B9%E6%B1%87%E6%80%BB#%E5%8D%8A%E4%BA%8C%E6%AC%A1%E5%88%86%E8%A3%82%E6%96%B9%E6%B3%95\">知识点汇总：半二次分裂方法</a></li>\n<li><a href=\"papers.html?note=concepts%2F%E7%9F%A5%E8%AF%86%E7%82%B9%E6%B1%87%E6%80%BB#%E8%BF%91%E7%AB%AF%E6%A2%AF%E5%BA%A6%E4%B8%8B%E9%99%8D\">知识点汇总：近端梯度下降</a></li>\n<li><a href=\"papers.html?note=concepts%2F%E7%9F%A5%E8%AF%86%E7%82%B9%E6%B1%87%E6%80%BB#%E5%90%91%E9%87%8F%E9%87%8F%E5%8C%96\">知识点汇总：向量量化</a></li>\n<li><a href=\"papers.html?note=concepts%2F%E7%9F%A5%E8%AF%86%E7%82%B9%E6%B1%87%E6%80%BB#wald%E5%8D%8F%E8%AE%AE\">知识点汇总：Wald协议</a></li>\n</ul>",
+    "toc": [
+      {
+        "level": 2,
+        "id": "_1",
+        "name": "研究任务",
+        "html": "研究任务",
+        "data-toc-label": "",
+        "children": []
+      },
+      {
+        "level": 2,
+        "id": "_2",
+        "name": "整体架构",
+        "html": "整体架构",
+        "data-toc-label": "",
+        "children": []
+      },
+      {
+        "level": 2,
+        "id": "_3",
+        "name": "核心模块",
+        "html": "核心模块",
+        "data-toc-label": "",
+        "children": [
+          {
+            "level": 3,
+            "id": "wcg",
+            "name": "WCG：退化算子生成",
+            "html": "WCG：退化算子生成",
+            "data-toc-label": "",
+            "children": []
+          },
+          {
+            "level": 3,
+            "id": "proxnet-z",
+            "name": "ProxNet-Z：图像先验",
+            "html": "ProxNet-Z：图像先验",
+            "data-toc-label": "",
+            "children": []
+          },
+          {
+            "level": 3,
+            "id": "proxnet-u",
+            "name": "ProxNet-U：卫星先验",
+            "html": "ProxNet-U：卫星先验",
+            "data-toc-label": "",
+            "children": [
+              {
+                "level": 4,
+                "id": "_4",
+                "name": "学习共享码本",
+                "html": "学习共享码本",
+                "data-toc-label": "",
+                "children": []
+              },
+              {
+                "level": 4,
+                "id": "_5",
+                "name": "学习卫星特定码本",
+                "html": "学习卫星特定码本",
+                "data-toc-label": "",
+                "children": []
+              },
+              {
+                "level": 4,
+                "id": "_6",
+                "name": "接入全色锐化网络",
+                "html": "接入全色锐化网络",
+                "data-toc-label": "",
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "level": 2,
+        "id": "_7",
+        "name": "相关知识点",
+        "html": "相关知识点",
+        "data-toc-label": "",
+        "children": []
+      }
+    ],
+    "search_text": " 研究任务 \n 现有全色锐化模型通常针对单颗卫星单独训练，不同卫星在空间分辨率、光谱波段配置和噪声特性上的差异，使模型难以直接迁移到其他卫星。若将多卫星数据混合训练，模型又容易把 通用空间规律 与 卫星特有的光谱特征 混在一起；而普通深度学习模型还缺少明确的物理约束。如何在一个模型中处理多颗卫星的数据，同时区分卫星特有信息与当前图像自身的特征，并兼顾物理可解释性和融合效果。 \n 整体架构 \n   \n  论文先把 LRMS 上采样得到初始 Z，再复制一份作为初始 U。之后交替更新两者：Z 结合 LRMS、PAN 的观测约束，通过 ProxNet-Z 改善当前图像的 空间和光谱特征 ；U 根据更新后的 Z，通过 ProxNet-U 加入对应 卫星的先验知识**，再帮助下一轮 Z 的重建。WCG 根据卫星的波段信息生成相应的退化算子。整个过程重复 3 轮，最终输出 Z，作为融合后的 HRMS 图像。 \n   \n 核心模块 \n WCG：退化算子生成 \n 输入各波段的中心波长，将波长转换成特征向量，Transformer 分析波段之间的关系，生成卷积核，用于模拟该卫星的 空间和光谱退化算子 。 \n   \n ProxNet-Z：图像先验 \n 采用四层 U-Net，在编码器和解码器的每个 Transformer 前加入 空间—通道提示模块 ：输入特征经 GAP、全连接层和 Softmax 计算组合权重，对 5 组可学习基础模板加权，生成当前图像的空间提示和通道提示；两种提示分别与特征逐元素相乘，再经通道拼接、1×1 卷积和残差连接融合，随后交给 Transformer 处理，最终重建修正后的 HRMS。 \n   \n ProxNet-U：卫星先验 \n ProxNet-U 的流程分为“ 预训练高质量先验 ”和“ 在全色锐化中使用先验 ”两部分。通过三级编码器中的 3D 卷积、光谱注意力和 FFN 提取特征，空间尺寸从  H×W  下采样到  h×w 。每个空间位置的  B×C  个特征被整理成一个向量，准备进行码本匹配。 \n 学习共享码本 \n ，所有卫星的 HRMS 图像使用同一个共享码本。每个特征向量进行多轮（J1）残差量化：选取最近的码向量、减去它、继续匹配剩余误差。累加选中的码向量，再通过解码器重建原图，利用重建损失和量化损失联合训练编码器、码本与解码器。 \n 学习卫星特定码本 \n ，在共享码本的基础上，为各卫星加入专用码本。前 3 轮量化使用共享码本，后 3 轮根据卫星来源选择专用码本，表示剩余特征。继续通过自重建训练，让两类码本分别表示共有规律和卫星特有变化。 \n 接入全色锐化网络 \n ，输入当前迭代的中间结果，执行同样的“编码 → 共享与专用码本残差量化 → 累加码向量 → 解码”过程，输出修正结果。此时 冻结码本和解码器，只训练编码器 ，让输入特征适配已经学好的高质量先验。 \n 相关知识点 \n \n  知识点汇总：深度展开  \n  知识点汇总：卷积字典/滤波器(filter)  \n  知识点汇总：贝叶斯公式  \n  知识点汇总：最大后验  \n  知识点汇总：先验项  \n  知识点汇总：观测模型  \n  知识点汇总：正则化项  \n  知识点汇总：半二次分裂方法  \n  知识点汇总：近端梯度下降  \n  知识点汇总：向量量化  \n  知识点汇总：Wald协议  \n "
+  },
+  {
     "id": "UPPAN",
     "kind": "paper",
     "title": "UP-PAN",
