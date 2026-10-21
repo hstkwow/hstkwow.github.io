@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import datetime
 from urllib.parse import urlsplit, unquote, quote
 from html.parser import HTMLParser
-import argparse, html, json, re, shutil
+import argparse, hashlib, html, json, re, shutil
 import yaml, markdown, bleach
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -103,6 +103,13 @@ def build():
     index_path=ROOT/'assets/data/reading-index.js'
     index_path.parent.mkdir(parents=True,exist_ok=True)
     index_path.write_text(content,encoding='utf-8')
+    # Give each generated index a content-based URL so browsers cannot reuse an old version.
+    version=hashlib.sha256(content.encode('utf-8')).hexdigest()[:16]
+    page_path=ROOT/'papers.html'
+    page=page_path.read_text(encoding='utf-8')
+    updated,count=re.subn(r'(src=["\'])assets/data/reading-index\.js(?:\?[^"\']*)?(["\'])',lambda m:m[1]+'assets/data/reading-index.js?v='+version+m[2],page)
+    if count!=1:raise ValueError('papers.html must include exactly one reading-index.js script')
+    if updated!=page:page_path.write_text(updated,encoding='utf-8')
     print(f'Built {sum(p["kind"]=="paper" for p in items)} papers and {sum(p["kind"]=="concept" for p in items)} concept documents; links, timestamps and anchors validated.')
     return items
 

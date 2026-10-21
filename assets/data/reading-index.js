@@ -7,14 +7,14 @@ window.READING_NOTES = [
     "topic": "Pansharpening",
     "tags": [],
     "started_at": "2026-10-17T11:07:00+08:00",
-    "finished_at": null,
-    "span_seconds": null,
-    "status": "reading",
+    "finished_at": "2026-10-20T13:40:00+08:00",
+    "span_seconds": 268380.0,
+    "status": "completed",
     "paper_url": "https://arxiv.org/abs/2605.02184",
     "publication_status": "",
     "summary": "",
     "source": "notes/RAFNet/index.md",
-    "html": "<h2 id=\"_1\">研究任务</h2>\n<p>现有全色锐化方法通常使用静态卷积提取空间细节，难以适应遥感影像中不同地物区域和不同频率分量的差异，容易削弱高频细节；而基于 Transformer 的融合方法需要计算大量贡献很小的全局注意力交互，计算量和内存开销较大。如何利用遥感影像的区域相似性，为不同区域和频率分量自适应地提取空间细节，同时减少冗余的注意力计算，在保留光谱信息的基础上，兼顾融合质量与计算效率。</p>\n<h2 id=\"_2\">整体架构</h2>\n<h2 id=\"_3\">核心模块</h2>",
+    "html": "<h2 id=\"_1\">研究任务</h2>\n<p>现有全色锐化方法通常使用静态卷积提取空间细节，难以适应遥感影像中不同地物区域和不同频率分量的差异，容易削弱高频细节；而基于 Transformer 的融合方法需要计算大量贡献很小的全局注意力交互，计算量和内存开销较大。如何利用遥感影像的区域相似性，为不同区域和频率分量自适应地提取空间细节，同时减少冗余的注意力计算，在保留光谱信息的基础上，兼顾融合质量与计算效率。</p>\n<h2 id=\"_2\">整体架构</h2>\n<p><img alt=\"截屏2026-10-19 18.39.11\" src=\"notes/RAFNet/images/%E6%88%AA%E5%B1%8F2026-10-19%2018.39.11.png\" loading=\"lazy\" decoding=\"async\"></p>\n<p>网络主要由两个模块组成，分别是SAR（空间自适应细化）和CFA（聚类频率聚合）这两个模块是相互耦合的</p>\n<p>首先PAN先通过输入卷积提取特征后进入的是高尺度分支，LRMS进入的是低尺度分支；首先是高尺度分支，PAN特征图通过<strong>小波变换</strong>后的到四个分量子带，然后多次进入<strong>空间自适应卷积模块</strong>，来增强四个子带到空间特征，最后通过<strong>逆小波变换</strong>得到空间增强特征图；高尺度的LL分量进入低尺度的分支，CFA模块就是通过<strong>簇路由离散注意力模块</strong>，对同一尺度分支的的空间特征图和低尺度的中间融合特征进行<strong>自适应离散注意力</strong>，随后进入MLP和逆小波变换得到融合特征，然后通过<strong>门控深度前馈网</strong>来过滤冗余信息，然后在进行一次簇路由离散注意力得到的融合特征图，与该尺度的空间增强特征图进行融合得到中间融合特征，然后进入高尺度分支进行融合，最终得到最终尺度的融合图像。</p>\n<h2 id=\"_3\">核心模块</h2>\n<p><img alt=\"截屏2026-10-19 19.36.07\" src=\"notes/RAFNet/images/%E6%88%AA%E5%B1%8F2026-10-19%2019.36.07.png\" loading=\"lazy\" decoding=\"async\"></p>\n<p>SAC的结构</p>\n<ul>\n<li>Cluster Region Partition（聚类区域划分）：通过特征提取和残差连接得到新的特征表示，然后进入soft K-means聚类得到簇类索引。</li>\n<li>Region Dynamic Convolution（区域动态卷积）：对四个子带分别处理，每个子带都按照簇类进行处理，首先把簇内所有像素的相邻区域特征展平，所有相邻区域特征求和在除簇内元素个数，形状是<span class=\"arithmatex\">\\(\\mathbb{R}^{k^2 \\times C_{in}}\\)</span>，然后展平进入三个并行的MLP分支分别产生两个低秩矩阵和偏置向量，两个低秩矩阵点乘得到该簇类的卷积权重W，簇内元素共享这个卷积权重，然后与簇内的像素进行hadamard积，加上偏置就得到了更新后的特征。</li>\n</ul>\n<p><img alt=\"截屏2026-10-19 19.36.49\" src=\"notes/RAFNet/images/%E6%88%AA%E5%B1%8F2026-10-19%2019.36.49.png\" loading=\"lazy\" decoding=\"async\"></p>\n<p>CFA的结构</p>\n<ul>\n<li>Cluster-Routed Sparse Attention（簇路由稀疏注意力）：首先是同一尺度的空间增强特征图进入小波变换生成四个子带分量，然后这四个子带分量进行线性映射得到四个Q矩阵，但是用同一组K、V，但查询内容不同，注意力权重也不同，因为低频具有整体空间结构，用该子带作为空间键，然后中间融合特征图与低频子带进行融合后进行线性映射后作为V，利用同一尺度的空间自适应细化模块的簇类区域划分图，进行稀疏注意力，同一簇内各个token都算注意力，不同簇内的只与该簇的平均键来算注意力，最后得到特征图，然后进入MLP进行特征重建，最后对四个子带进行逆小波变换得到融合特征图。</li>\n<li>Gated Depthwise Forward Network（门控深度前馈网络）：为了抑制稀疏注意力机制传递冗余信息，对稀疏注意力得到的结果进行细化，调节哪些特征应该被增强，哪些特征应该被削弱。首先归一化后分为两路都进行3x3卷积，其中一路进行GELU，然后两分支计算hadamard积，然后进行1x1卷积融合不同通道信息，然后进行残差连接。</li>\n</ul>",
     "toc": [
       {
         "level": 2,
@@ -41,7 +41,7 @@ window.READING_NOTES = [
         "children": []
       }
     ],
-    "search_text": " 研究任务 \n 现有全色锐化方法通常使用静态卷积提取空间细节，难以适应遥感影像中不同地物区域和不同频率分量的差异，容易削弱高频细节；而基于 Transformer 的融合方法需要计算大量贡献很小的全局注意力交互，计算量和内存开销较大。如何利用遥感影像的区域相似性，为不同区域和频率分量自适应地提取空间细节，同时减少冗余的注意力计算，在保留光谱信息的基础上，兼顾融合质量与计算效率。 \n 整体架构 \n 核心模块 "
+    "search_text": " 研究任务 \n 现有全色锐化方法通常使用静态卷积提取空间细节，难以适应遥感影像中不同地物区域和不同频率分量的差异，容易削弱高频细节；而基于 Transformer 的融合方法需要计算大量贡献很小的全局注意力交互，计算量和内存开销较大。如何利用遥感影像的区域相似性，为不同区域和频率分量自适应地提取空间细节，同时减少冗余的注意力计算，在保留光谱信息的基础上，兼顾融合质量与计算效率。 \n 整体架构 \n   \n 网络主要由两个模块组成，分别是SAR（空间自适应细化）和CFA（聚类频率聚合）这两个模块是相互耦合的 \n 首先PAN先通过输入卷积提取特征后进入的是高尺度分支，LRMS进入的是低尺度分支；首先是高尺度分支，PAN特征图通过 小波变换 后的到四个分量子带，然后多次进入 空间自适应卷积模块 ，来增强四个子带到空间特征，最后通过 逆小波变换 得到空间增强特征图；高尺度的LL分量进入低尺度的分支，CFA模块就是通过 簇路由离散注意力模块 ，对同一尺度分支的的空间特征图和低尺度的中间融合特征进行 自适应离散注意力 ，随后进入MLP和逆小波变换得到融合特征，然后通过 门控深度前馈网 来过滤冗余信息，然后在进行一次簇路由离散注意力得到的融合特征图，与该尺度的空间增强特征图进行融合得到中间融合特征，然后进入高尺度分支进行融合，最终得到最终尺度的融合图像。 \n 核心模块 \n   \n SAC的结构 \n \n Cluster Region Partition（聚类区域划分）：通过特征提取和残差连接得到新的特征表示，然后进入soft K-means聚类得到簇类索引。 \n Region Dynamic Convolution（区域动态卷积）：对四个子带分别处理，每个子带都按照簇类进行处理，首先把簇内所有像素的相邻区域特征展平，所有相邻区域特征求和在除簇内元素个数，形状是 \\(\\mathbb{R}^{k^2 \\times C_{in}}\\) ，然后展平进入三个并行的MLP分支分别产生两个低秩矩阵和偏置向量，两个低秩矩阵点乘得到该簇类的卷积权重W，簇内元素共享这个卷积权重，然后与簇内的像素进行hadamard积，加上偏置就得到了更新后的特征。 \n \n   \n CFA的结构 \n \n Cluster-Routed Sparse Attention（簇路由稀疏注意力）：首先是同一尺度的空间增强特征图进入小波变换生成四个子带分量，然后这四个子带分量进行线性映射得到四个Q矩阵，但是用同一组K、V，但查询内容不同，注意力权重也不同，因为低频具有整体空间结构，用该子带作为空间键，然后中间融合特征图与低频子带进行融合后进行线性映射后作为V，利用同一尺度的空间自适应细化模块的簇类区域划分图，进行稀疏注意力，同一簇内各个token都算注意力，不同簇内的只与该簇的平均键来算注意力，最后得到特征图，然后进入MLP进行特征重建，最后对四个子带进行逆小波变换得到融合特征图。 \n Gated Depthwise Forward Network（门控深度前馈网络）：为了抑制稀疏注意力机制传递冗余信息，对稀疏注意力得到的结果进行细化，调节哪些特征应该被增强，哪些特征应该被削弱。首先归一化后分为两路都进行3x3卷积，其中一路进行GELU，然后两分支计算hadamard积，然后进行1x1卷积融合不同通道信息，然后进行残差连接。 \n "
   },
   {
     "id": "Ada3D",
@@ -286,7 +286,7 @@ window.READING_NOTES = [
     "publication_status": "",
     "summary": "",
     "source": "notes/TMMFNet/index.md",
-    "html": "<h2 id=\"_1\">整体框架</h2>\n<p><img alt=\"截屏2026-09-21 09.46.08\" src=\"notes/TMMFNet/images/framework.png\" loading=\"lazy\" decoding=\"async\"></p>\n<h2 id=\"_2\">核心模块</h2>\n<h3 id=\"cot\">基于 CoT 的语义描述生成</h3>\n<p>LRMS 图像 → Real-ESRGAN 超分辨率增强 → SAMGeo 生成分割图 → 将超分辨率图、分割图及卫星信息输入 GPT-4o → CoT 引导场景分析 → 生成遥感<strong>图像描述</strong> → CLIP 将其转化为<strong>文本特征</strong> → 用于接下来的引导 PAN 与 MS 融合，生成分割图帮助gpt-4o来理解图片</p>\n<h3 id=\"teb-tmb\">文本增强与调制：TEB / TMB</h3>\n<p>LRMS上采样然后进入编码器，然后进行特征提取，随后和生成的文本特征进入多轮TEB和TMB，生成MS和文本融合特征。</p>\n<h4 id=\"tebtextual-enhancement-block\">TEB（textual enhancement block）</h4>\n<p>上一轮TEB和TMB生成的MS特征和CLIP生成文本特征一起进入TEB，先分别进行预处理，然后进行交叉注意力，MS特征做Query，文本特征做Key、Value，生成MS融合文本语义的特征</p>\n<h4 id=\"tmbtextual-modulated-block\">TMB（textual modulated block）</h4>\n<p>TEB的输出、CLIP生成的文本特征<span class=\"arithmatex\">\\(F_t\\)</span>、可学习提示(prompt)特征<span class=\"arithmatex\">\\(F_p\\)</span>进入TMB。首先<span class=\"arithmatex\">\\(F_t和F_p\\)</span>拼接然后执行注意力和残差连接，然后进入多层感知机MLP，输出两个参数，视觉特征<span class=\"arithmatex\">\\(F_{ms}\\)</span>进行自注意力处理和残差连接，然后用生成的两个参数进行缩放和平移，最后通过前向网络和残差连接生成MS图像融合特征。</p>\n<h3 id=\"_3\">视觉融合模块</h3>\n<p>MS特征和PAN特征进行融合，使用交叉注意力，Query取自MS的图像特征，Key和Value取自PAN的图像特征，融合后经过解码和双三次差值后的LRMS图像进行残差连接，最后得到HRMS图像</p>\n<h2 id=\"_4\">损失函数</h2>\n<p>采用L1损失，就是输出和真实的差距</p>",
+    "html": "<h2 id=\"_1\">整体框架</h2>\n<p><img alt=\"截屏2026-09-21 09.46.08\" src=\"notes/TMMFNet/images/framework.png\" loading=\"lazy\" decoding=\"async\"></p>\n<h2 id=\"_2\">核心模块</h2>\n<h3 id=\"cot\">基于 CoT 的语义描述生成</h3>\n<p>LRMS 图像进入Real-ESRGAN 超分辨率增强得到SAMGeo 生成分割图，将超分辨率图<span class=\"arithmatex\">\\(I_{sr}\\)</span>、分割图<span class=\"arithmatex\">\\(I_{seg}\\)</span>、卫星特定信息<span class=\"arithmatex\">\\(P_s\\)</span>和链式引导方式<span class=\"arithmatex\">\\(P_{chain}\\)</span>一起输入MLLM(Multimodal Large Language Model)如GPT-4o生成<strong>遥感影像描述</strong><span class=\"arithmatex\">\\(T_{lms}\\)</span>，随后利用<strong>CLIP文本编码器</strong>（已经训练好）将其编码成<strong>文本特征</strong><span class=\"arithmatex\">\\(F_t\\)</span>。</p>\n<h3 id=\"_3\">视觉编码器</h3>\n<p>LRMS上采样然后进入<strong>视觉编码器</strong>，PAN图像直接进入<strong>视觉编码器</strong>，进行特征提取。\n$$\nf_{ms}=SE \\circ LN(Conv(I_{lms}))+Conv(I_{lms})\n$$</p>\n<div class=\"arithmatex\">\\[\nF_{ms}=FFN \\circ LN(f_{ms})+f_{ms}\n\\]</div>\n<p>SE代表自注意力操作，这是一个典型的Pre-LN Transfomer块。</p>\n<h3 id=\"teb-tmb\">文本增强与调制：TEB / TMB</h3>\n<p><img alt=\"截屏2026-10-21 17.01.12\" src=\"notes/TMMFNet/images/%E6%88%AA%E5%B1%8F2026-10-21%2017.01.12.png\" loading=\"lazy\" decoding=\"async\"></p>\n<h4 id=\"tebtextual-enhancement-block\">TEB（Textual Enhancement Block）</h4>\n<p>第i-1轮TMB生成的融合多光谱特征<span class=\"arithmatex\">\\(F_{ms}\\)</span>和CLIP生成文本特征<span class=\"arithmatex\">\\(F_{t}\\)</span>一起进入TEB，先分别进行预处理，然后进行交叉注意力，多光谱特征做Query，文本特征做Key、Value，生成第i轮的多光谱融特征</p>\n<h4 id=\"tmbtextual-modulated-block\">TMB（Textual Modulated Block）</h4>\n<p>TEB的输出即融合的光谱特征，CLIP生成的文本特征<span class=\"arithmatex\">\\(F_t\\)</span>、可学习提示prompt特征<span class=\"arithmatex\">\\(F_p\\)</span>进入TMB。首先<span class=\"arithmatex\">\\(F_t和F_p\\)</span>拼接然后执行注意力和残差连接，reshape后进入多层感知机MLP，输出两个细粒度语义参数，促进模态间的交互。视觉特征<span class=\"arithmatex\">\\(F_{ms}\\)</span>进行自注意力处理和残差连接，然后用生成的两个参数进行缩放和平移，最后通过门控前向网络和残差连接生成MS图像融合特征。</p>\n<h3 id=\"_4\">视觉融合模块</h3>\n<p>多光谱的特征和PAN的特征进行融合，使用交叉注意力，Query取自LRMS的图像特征，Key和Value取自PAN的图像特征，融合后经过解码和双三次插值后的LRMS图像进行残差连接，最后得到HRMS图像。</p>\n<h2 id=\"_5\">损失函数</h2>\n<p>采用L1损失，就是输出和真实的差距</p>",
     "toc": [
       {
         "level": 2,
@@ -313,6 +313,14 @@ window.READING_NOTES = [
           },
           {
             "level": 3,
+            "id": "_3",
+            "name": "视觉编码器",
+            "html": "视觉编码器",
+            "data-toc-label": "",
+            "children": []
+          },
+          {
+            "level": 3,
             "id": "teb-tmb",
             "name": "文本增强与调制：TEB / TMB",
             "html": "文本增强与调制：TEB / TMB",
@@ -321,16 +329,16 @@ window.READING_NOTES = [
               {
                 "level": 4,
                 "id": "tebtextual-enhancement-block",
-                "name": "TEB（textual enhancement block）",
-                "html": "TEB（textual enhancement block）",
+                "name": "TEB（Textual Enhancement Block）",
+                "html": "TEB（Textual Enhancement Block）",
                 "data-toc-label": "",
                 "children": []
               },
               {
                 "level": 4,
                 "id": "tmbtextual-modulated-block",
-                "name": "TMB（textual modulated block）",
-                "html": "TMB（textual modulated block）",
+                "name": "TMB（Textual Modulated Block）",
+                "html": "TMB（Textual Modulated Block）",
                 "data-toc-label": "",
                 "children": []
               }
@@ -338,7 +346,7 @@ window.READING_NOTES = [
           },
           {
             "level": 3,
-            "id": "_3",
+            "id": "_4",
             "name": "视觉融合模块",
             "html": "视觉融合模块",
             "data-toc-label": "",
@@ -348,14 +356,14 @@ window.READING_NOTES = [
       },
       {
         "level": 2,
-        "id": "_4",
+        "id": "_5",
         "name": "损失函数",
         "html": "损失函数",
         "data-toc-label": "",
         "children": []
       }
     ],
-    "search_text": " 整体框架 \n   \n 核心模块 \n 基于 CoT 的语义描述生成 \n LRMS 图像 → Real-ESRGAN 超分辨率增强 → SAMGeo 生成分割图 → 将超分辨率图、分割图及卫星信息输入 GPT-4o → CoT 引导场景分析 → 生成遥感 图像描述  → CLIP 将其转化为 文本特征  → 用于接下来的引导 PAN 与 MS 融合，生成分割图帮助gpt-4o来理解图片 \n 文本增强与调制：TEB / TMB \n LRMS上采样然后进入编码器，然后进行特征提取，随后和生成的文本特征进入多轮TEB和TMB，生成MS和文本融合特征。 \n TEB（textual enhancement block） \n 上一轮TEB和TMB生成的MS特征和CLIP生成文本特征一起进入TEB，先分别进行预处理，然后进行交叉注意力，MS特征做Query，文本特征做Key、Value，生成MS融合文本语义的特征 \n TMB（textual modulated block） \n TEB的输出、CLIP生成的文本特征 \\(F_t\\) 、可学习提示(prompt)特征 \\(F_p\\) 进入TMB。首先 \\(F_t和F_p\\) 拼接然后执行注意力和残差连接，然后进入多层感知机MLP，输出两个参数，视觉特征 \\(F_{ms}\\) 进行自注意力处理和残差连接，然后用生成的两个参数进行缩放和平移，最后通过前向网络和残差连接生成MS图像融合特征。 \n 视觉融合模块 \n MS特征和PAN特征进行融合，使用交叉注意力，Query取自MS的图像特征，Key和Value取自PAN的图像特征，融合后经过解码和双三次差值后的LRMS图像进行残差连接，最后得到HRMS图像 \n 损失函数 \n 采用L1损失，就是输出和真实的差距 "
+    "search_text": " 整体框架 \n   \n 核心模块 \n 基于 CoT 的语义描述生成 \n LRMS 图像进入Real-ESRGAN 超分辨率增强得到SAMGeo 生成分割图，将超分辨率图 \\(I_{sr}\\) 、分割图 \\(I_{seg}\\) 、卫星特定信息 \\(P_s\\) 和链式引导方式 \\(P_{chain}\\) 一起输入MLLM(Multimodal Large Language Model)如GPT-4o生成 遥感影像描述  \\(T_{lms}\\) ，随后利用 CLIP文本编码器 （已经训练好）将其编码成 文本特征  \\(F_t\\) 。 \n 视觉编码器 \n LRMS上采样然后进入 视觉编码器 ，PAN图像直接进入 视觉编码器 ，进行特征提取。\n$$\nf_{ms}=SE \\circ LN(Conv(I_{lms}))+Conv(I_{lms})\n$$ \n \\[\nF_{ms}=FFN \\circ LN(f_{ms})+f_{ms}\n\\] \n SE代表自注意力操作，这是一个典型的Pre-LN Transfomer块。 \n 文本增强与调制：TEB / TMB \n   \n TEB（Textual Enhancement Block） \n 第i-1轮TMB生成的融合多光谱特征 \\(F_{ms}\\) 和CLIP生成文本特征 \\(F_{t}\\) 一起进入TEB，先分别进行预处理，然后进行交叉注意力，多光谱特征做Query，文本特征做Key、Value，生成第i轮的多光谱融特征 \n TMB（Textual Modulated Block） \n TEB的输出即融合的光谱特征，CLIP生成的文本特征 \\(F_t\\) 、可学习提示prompt特征 \\(F_p\\) 进入TMB。首先 \\(F_t和F_p\\) 拼接然后执行注意力和残差连接，reshape后进入多层感知机MLP，输出两个细粒度语义参数，促进模态间的交互。视觉特征 \\(F_{ms}\\) 进行自注意力处理和残差连接，然后用生成的两个参数进行缩放和平移，最后通过门控前向网络和残差连接生成MS图像融合特征。 \n 视觉融合模块 \n 多光谱的特征和PAN的特征进行融合，使用交叉注意力，Query取自LRMS的图像特征，Key和Value取自PAN的图像特征，融合后经过解码和双三次插值后的LRMS图像进行残差连接，最后得到HRMS图像。 \n 损失函数 \n 采用L1损失，就是输出和真实的差距 "
   },
   {
     "id": "CLIPPan",
@@ -371,11 +379,19 @@ window.READING_NOTES = [
     "publication_status": "",
     "summary": "",
     "source": "notes/CLIPPan/index.md",
-    "html": "<h2 id=\"_1\">整体方法</h2>\n<p><img alt=\"截屏2026-09-19 17.16.09\" src=\"notes/CLIPPan/images/framework.png\" loading=\"lazy\" decoding=\"async\"></p>\n<p>预训练CLIP使其能够处理MS图像，适配阶段结束后，使CLIP固定成语言监督器，用空间光谱一致性，模态对齐，细节保持，来当作训练目标，采用参数高效微调策略，加入CLIP Adapter （CA），这篇文章的文本是人工固定编写好的文本提示</p>\n<h2 id=\"clip\">CLIP 适配阶段</h2>\n<h3 id=\"intermcl\">跨模态对比学习 InterMCL</h3>\n<p>在图像内容和文本间，让匹配的图像与文本的特征相似，不匹配的特征不相似，就是那类图像对应那类文字描述</p>\n<h3 id=\"intramcl\">模态内对比学习 IntraMCL</h3>\n<p>进行图像模态内的学习，让CLIP知道图片的具体内容，生成不同的图像特征。</p>\n<h3 id=\"_2\">融合感知对齐</h3>\n<p>加入图像融合适配器IFA和文本适配器TFA，利用ms和pan的图像特征进入IFA生成图像的融合特征，利用ms和pan的文本特征进入TFA生成文本的融合特征</p>\n<h3 id=\"_3\">适配阶段损失</h3>\n<p><span class=\"arithmatex\">\\(L_{s1}\\)</span>=<span class=\"arithmatex\">\\(L_{inter}\\)</span>+<span class=\"arithmatex\">\\(L_{intra}\\)</span>+<span class=\"arithmatex\">\\(L_{fusion}\\)</span>，<span class=\"arithmatex\">\\(L_{fusion}=|F_{fuse}^T-F_{wald}^T|_1+|F_{fuse}^I-F_{HRMS}^I|_1\\)</span>，Wald协议的文本特征是对所有图像都是相同的，无法描述每张图的各自内容</p>\n<h2 id=\"_4\">语言引导的无监督全色锐化</h2>\n<p><img alt=\"截屏2026-09-20 10.53.10\" src=\"notes/CLIPPan/images/figure-02.png\" loading=\"lazy\" decoding=\"async\"></p>\n<p>使用语义监督和底层视觉监督训练融合网络</p>\n<h3 id=\"_5\">语义监督</h3>\n<p>不让融合图像简单的像素级接近Wlad协议的文本特征，要变化方向接近最终特征，</p>\n<p><span class=\"arithmatex\">\\(\\begin{aligned} \\Delta V^I_{\\mathrm{MS}}&amp;=F^I_{\\mathrm{out}}-F^I_{\\mathrm{MS}}, &amp;\\Delta V^T_{\\mathrm{MS}}&amp;=F^T_{\\mathrm{wald}}-F^T_{\\mathrm{MS}},\\\\ \\Delta V^I_{\\mathrm{PAN}}&amp;=F^I_{\\mathrm{out}}-F^I_{\\mathrm{PAN}}, &amp;\\Delta V^T_{\\mathrm{PAN}}&amp;=F^T_{\\mathrm{wald}}-F^T_{\\mathrm{PAN}}. \\end{aligned} \\tag{7–8}\\)</span>然后计算方向损失，要计算ms的图片方向和文本方向的角度差异，从而让输出的语义接近HRMS图像</p>\n<h3 id=\"_6\">底层视觉约束</h3>\n<p>光谱一致性：融和的图像进行四倍双三次降采样后，与输入的MS图像比较，使用平方误差和机构相似性SSIM约束</p>\n<p>空间清晰度：用1x1的卷积将多光谱通道变成单光谱通道，在于pan比较，同样使用平方误差和SSIM</p>\n<p>光谱与空间的权衡项：作者还采用基于 QNR 的指标，结合光谱失真与空间失真 </p>\n<p>伪监督：使用一个训练好的全色锐化模型，暂时吧它生成的融合图像作为一伪参考图</p>",
+    "html": "<h2 id=\"_1\">研究任务</h2>\n<p>现有有监督全色锐化方法通常依赖模拟的降分辨率数据进行训练，与真实全分辨率影像之间存在尺度域差异，导致实际应用性能下降；而直接在全分辨率上训练的无监督方法，又主要依赖低层的空间、光谱一致性约束，缺少对“理想融合结果应该是什么”的高层指导。同时，原始 CLIP 偏向自然影像，难以直接理解多光谱数据和全色锐化任务。如何将 CLIP 适配为理解遥感影像与融合目标的语义监督器，利用描述融合规则的文本提示，在没有真实 HRMS 标签的情况下，指导模型直接进行全分辨率训练，并兼顾空间清晰度与光谱保真度。</p>\n<h2 id=\"_2\">整体方法</h2>\n<p><img alt=\"截屏2026-09-19 17.16.09\" src=\"notes/CLIPPan/images/framework.png\" loading=\"lazy\" decoding=\"async\"></p>\n<p>预训练CLIP使其能够处理MS图像，适配阶段结束后，使CLIP<strong>固定</strong>成语言监督器，用空间光谱一致性、模态对齐和细节保持来当作训练目标，采用参数高效微调策略，加入CLIP Adapter （CA），这篇文章的文本是人工固定编写好的文本提示。</p>\n<h2 id=\"clip\">CLIP 适配阶段</h2>\n<h3 id=\"intermcl\">跨模态对比学习 InterMCL</h3>\n<p>在图像特征和文本特征间，让匹配的图像与文本的特征相似，不匹配的特征不相似，就是哪类图像对应同类文字描述</p>\n<h3 id=\"intramcl\">模态内对比学习 IntraMCL</h3>\n<p>进行图像模态内的学习，让CLIP知道图片的具体内容，让同一样本的PAN，LRMS和HRMS图像特征相似。</p>\n<h3 id=\"_3\">融合感知对齐</h3>\n<p>加入<strong>图像融合适配器</strong>IFA和<strong>文本适配器</strong>TFA，利用ms和pan的图像特征进入IFA生成图像的融合特征，利用ms和pan的文本特征进入TFA生成文本的融合特征</p>\n<h3 id=\"_4\">适配阶段损失函数</h3>\n<div class=\"arithmatex\">\\[\n\\mathcal L_{s1}=\\mathcal L_{inter}+\\mathcal L_{intra}+\\mathcal L_{fusion}\n\\]</div>\n<div class=\"arithmatex\">\\[\n\\mathcal L_{fusion}=\\|F_{fuse}^T-F_{wald}^T\\|_1+\\|F_{fuse}^I-F_{HRMS}^I\\|_1\n\\]</div>\n<p>Wald协议的文本特征是对所有图像都是相同的，无法描述每张图的各自内容</p>\n<h2 id=\"_5\">语言引导的无监督全色锐化</h2>\n<p><img alt=\"截屏2026-09-20 10.53.10\" src=\"notes/CLIPPan/images/figure-02.png\" loading=\"lazy\" decoding=\"async\"></p>\n<p>使用<strong>语义监督</strong>和<strong>底层视觉监督</strong>训练融合网络</p>\n<h3 id=\"_6\">语义监督</h3>\n<p>不让融合图像简单的像素级接近Wlad协议的文本特征，要变化方向接近最终特征，\n$$\n\\begin{aligned} \\Delta V^I_{\\mathrm{MS}}&amp;=F^I_{\\mathrm{out}}-F^I_{\\mathrm{MS}}, \n&amp;\\Delta V^T_{\\mathrm{MS}}&amp;=F^T_{\\mathrm{wald}}-F^T_{\\mathrm{MS}},\\\n\\Delta V^I_{\\mathrm{PAN}}&amp;=F^I_{\\mathrm{out}}-F^I_{\\mathrm{PAN}}, \n&amp;\\Delta V^T_{\\mathrm{PAN}}&amp;=F^T_{\\mathrm{wald}}-F^T_{\\mathrm{PAN}}. \\end{aligned}\n$$\n然后计算方向损失，要计算ms的图片方向和文本方向的角度差异，从而让输出的语义接近HRMS图像</p>\n<h3 id=\"_7\">底层视觉约束</h3>\n<p>光谱一致性：融和的图像进行四倍双三次降采样后，与输入的MS图像比较，使用平方误差和机构相似性SSIM约束</p>\n<p>空间清晰度：用1x1的卷积将多光谱通道变成单光谱通道，在于pan比较，同样使用平方误差和SSIM</p>\n<p>光谱与空间的权衡项：作者还采用基于 QNR 的指标，结合光谱失真与空间失真 </p>\n<p>伪监督：使用一个训练好的全色锐化模型，暂时把它生成的融合图像作为一伪参考图</p>",
     "toc": [
       {
         "level": 2,
         "id": "_1",
+        "name": "研究任务",
+        "html": "研究任务",
+        "data-toc-label": "",
+        "children": []
+      },
+      {
+        "level": 2,
+        "id": "_2",
         "name": "整体方法",
         "html": "整体方法",
         "data-toc-label": "",
@@ -406,7 +422,7 @@ window.READING_NOTES = [
           },
           {
             "level": 3,
-            "id": "_2",
+            "id": "_3",
             "name": "融合感知对齐",
             "html": "融合感知对齐",
             "data-toc-label": "",
@@ -414,9 +430,9 @@ window.READING_NOTES = [
           },
           {
             "level": 3,
-            "id": "_3",
-            "name": "适配阶段损失",
-            "html": "适配阶段损失",
+            "id": "_4",
+            "name": "适配阶段损失函数",
+            "html": "适配阶段损失函数",
             "data-toc-label": "",
             "children": []
           }
@@ -424,14 +440,14 @@ window.READING_NOTES = [
       },
       {
         "level": 2,
-        "id": "_4",
+        "id": "_5",
         "name": "语言引导的无监督全色锐化",
         "html": "语言引导的无监督全色锐化",
         "data-toc-label": "",
         "children": [
           {
             "level": 3,
-            "id": "_5",
+            "id": "_6",
             "name": "语义监督",
             "html": "语义监督",
             "data-toc-label": "",
@@ -439,7 +455,7 @@ window.READING_NOTES = [
           },
           {
             "level": 3,
-            "id": "_6",
+            "id": "_7",
             "name": "底层视觉约束",
             "html": "底层视觉约束",
             "data-toc-label": "",
@@ -448,7 +464,7 @@ window.READING_NOTES = [
         ]
       }
     ],
-    "search_text": " 整体方法 \n   \n 预训练CLIP使其能够处理MS图像，适配阶段结束后，使CLIP固定成语言监督器，用空间光谱一致性，模态对齐，细节保持，来当作训练目标，采用参数高效微调策略，加入CLIP Adapter （CA），这篇文章的文本是人工固定编写好的文本提示 \n CLIP 适配阶段 \n 跨模态对比学习 InterMCL \n 在图像内容和文本间，让匹配的图像与文本的特征相似，不匹配的特征不相似，就是那类图像对应那类文字描述 \n 模态内对比学习 IntraMCL \n 进行图像模态内的学习，让CLIP知道图片的具体内容，生成不同的图像特征。 \n 融合感知对齐 \n 加入图像融合适配器IFA和文本适配器TFA，利用ms和pan的图像特征进入IFA生成图像的融合特征，利用ms和pan的文本特征进入TFA生成文本的融合特征 \n 适配阶段损失 \n  \\(L_{s1}\\) = \\(L_{inter}\\) + \\(L_{intra}\\) + \\(L_{fusion}\\) ， \\(L_{fusion}=|F_{fuse}^T-F_{wald}^T|_1+|F_{fuse}^I-F_{HRMS}^I|_1\\) ，Wald协议的文本特征是对所有图像都是相同的，无法描述每张图的各自内容 \n 语言引导的无监督全色锐化 \n   \n 使用语义监督和底层视觉监督训练融合网络 \n 语义监督 \n 不让融合图像简单的像素级接近Wlad协议的文本特征，要变化方向接近最终特征， \n  \\(\\begin{aligned} \\Delta V^I_{\\mathrm{MS}}&amp;=F^I_{\\mathrm{out}}-F^I_{\\mathrm{MS}}, &amp;\\Delta V^T_{\\mathrm{MS}}&amp;=F^T_{\\mathrm{wald}}-F^T_{\\mathrm{MS}},\\\\ \\Delta V^I_{\\mathrm{PAN}}&amp;=F^I_{\\mathrm{out}}-F^I_{\\mathrm{PAN}}, &amp;\\Delta V^T_{\\mathrm{PAN}}&amp;=F^T_{\\mathrm{wald}}-F^T_{\\mathrm{PAN}}. \\end{aligned} \\tag{7–8}\\) 然后计算方向损失，要计算ms的图片方向和文本方向的角度差异，从而让输出的语义接近HRMS图像 \n 底层视觉约束 \n 光谱一致性：融和的图像进行四倍双三次降采样后，与输入的MS图像比较，使用平方误差和机构相似性SSIM约束 \n 空间清晰度：用1x1的卷积将多光谱通道变成单光谱通道，在于pan比较，同样使用平方误差和SSIM \n 光谱与空间的权衡项：作者还采用基于 QNR 的指标，结合光谱失真与空间失真  \n 伪监督：使用一个训练好的全色锐化模型，暂时吧它生成的融合图像作为一伪参考图 "
+    "search_text": " 研究任务 \n 现有有监督全色锐化方法通常依赖模拟的降分辨率数据进行训练，与真实全分辨率影像之间存在尺度域差异，导致实际应用性能下降；而直接在全分辨率上训练的无监督方法，又主要依赖低层的空间、光谱一致性约束，缺少对“理想融合结果应该是什么”的高层指导。同时，原始 CLIP 偏向自然影像，难以直接理解多光谱数据和全色锐化任务。如何将 CLIP 适配为理解遥感影像与融合目标的语义监督器，利用描述融合规则的文本提示，在没有真实 HRMS 标签的情况下，指导模型直接进行全分辨率训练，并兼顾空间清晰度与光谱保真度。 \n 整体方法 \n   \n 预训练CLIP使其能够处理MS图像，适配阶段结束后，使CLIP 固定 成语言监督器，用空间光谱一致性、模态对齐和细节保持来当作训练目标，采用参数高效微调策略，加入CLIP Adapter （CA），这篇文章的文本是人工固定编写好的文本提示。 \n CLIP 适配阶段 \n 跨模态对比学习 InterMCL \n 在图像特征和文本特征间，让匹配的图像与文本的特征相似，不匹配的特征不相似，就是哪类图像对应同类文字描述 \n 模态内对比学习 IntraMCL \n 进行图像模态内的学习，让CLIP知道图片的具体内容，让同一样本的PAN，LRMS和HRMS图像特征相似。 \n 融合感知对齐 \n 加入 图像融合适配器 IFA和 文本适配器 TFA，利用ms和pan的图像特征进入IFA生成图像的融合特征，利用ms和pan的文本特征进入TFA生成文本的融合特征 \n 适配阶段损失函数 \n \\[\n\\mathcal L_{s1}=\\mathcal L_{inter}+\\mathcal L_{intra}+\\mathcal L_{fusion}\n\\] \n \\[\n\\mathcal L_{fusion}=\\|F_{fuse}^T-F_{wald}^T\\|_1+\\|F_{fuse}^I-F_{HRMS}^I\\|_1\n\\] \n Wald协议的文本特征是对所有图像都是相同的，无法描述每张图的各自内容 \n 语言引导的无监督全色锐化 \n   \n 使用 语义监督 和 底层视觉监督 训练融合网络 \n 语义监督 \n 不让融合图像简单的像素级接近Wlad协议的文本特征，要变化方向接近最终特征，\n$$\n\\begin{aligned} \\Delta V^I_{\\mathrm{MS}}&amp;=F^I_{\\mathrm{out}}-F^I_{\\mathrm{MS}}, \n&amp;\\Delta V^T_{\\mathrm{MS}}&amp;=F^T_{\\mathrm{wald}}-F^T_{\\mathrm{MS}},\\\n\\Delta V^I_{\\mathrm{PAN}}&amp;=F^I_{\\mathrm{out}}-F^I_{\\mathrm{PAN}}, \n&amp;\\Delta V^T_{\\mathrm{PAN}}&amp;=F^T_{\\mathrm{wald}}-F^T_{\\mathrm{PAN}}. \\end{aligned}\n$$\n然后计算方向损失，要计算ms的图片方向和文本方向的角度差异，从而让输出的语义接近HRMS图像 \n 底层视觉约束 \n 光谱一致性：融和的图像进行四倍双三次降采样后，与输入的MS图像比较，使用平方误差和机构相似性SSIM约束 \n 空间清晰度：用1x1的卷积将多光谱通道变成单光谱通道，在于pan比较，同样使用平方误差和SSIM \n 光谱与空间的权衡项：作者还采用基于 QNR 的指标，结合光谱失真与空间失真  \n 伪监督：使用一个训练好的全色锐化模型，暂时把它生成的融合图像作为一伪参考图 "
   },
   {
     "id": "DANet",
@@ -645,6 +661,49 @@ window.READING_NOTES = [
       }
     ],
     "search_text": " 整体方法 \n\n\n   \n 让PAN来引导MS进行融合图像 \n 核心模块 \n Scale Aware Patchify \n SAP把图像序列化，训练时裁剪块固定，但随机选择不同大小的切块窗口，使序列长度大小不一， \n Spatial Transformer \n 学习每个patch的纹理边缘 \n Sequence Transformer \n 学习patch之间的关系，利用RoPE进行位置编码 "
+  },
+  {
+    "id": "LSKNet",
+    "kind": "paper",
+    "title": "LSKNet",
+    "topic": "Pansharpening",
+    "tags": [],
+    "started_at": null,
+    "finished_at": null,
+    "span_seconds": null,
+    "status": "reading",
+    "paper_url": "https://arxiv.org/abs/2403.11735",
+    "publication_status": "",
+    "summary": "",
+    "source": "notes/LSKNet/index.md",
+    "html": "<h2 id=\"_1\">研究任务</h2>\n<h2 id=\"_2\">整体架构</h2>\n<h2 id=\"_3\">核心模块</h2>",
+    "toc": [
+      {
+        "level": 2,
+        "id": "_1",
+        "name": "研究任务",
+        "html": "研究任务",
+        "data-toc-label": "",
+        "children": []
+      },
+      {
+        "level": 2,
+        "id": "_2",
+        "name": "整体架构",
+        "html": "整体架构",
+        "data-toc-label": "",
+        "children": []
+      },
+      {
+        "level": 2,
+        "id": "_3",
+        "name": "核心模块",
+        "html": "核心模块",
+        "data-toc-label": "",
+        "children": []
+      }
+    ],
+    "search_text": " 研究任务 \n 整体架构 \n 核心模块 "
   },
   {
     "id": "concepts/知识点汇总",
