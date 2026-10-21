@@ -79,7 +79,7 @@ def build():
     for path,item in catalog.items():
         body=item.pop('_body');formulas=[]
         # Preserve code literally; protect TeX before Markdown interprets backslashes or underscores.
-        pattern=r'(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]+`)|(\\\([\s\S]*?\\\)|\\\[[\s\S]*?\\\])'
+        pattern=r'(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]+`)|(\\\([\s\S]*?\\\)|\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$)'
         def protect(m):
             if m[1]:return m[1]
             token='MATHPLACEHOLDER'+str(len(formulas))+'END';formulas.append(m[2]);return token
@@ -87,6 +87,7 @@ def build():
         md=markdown.Markdown(extensions=['extra','toc','sane_lists','pymdownx.arithmatex'],extension_configs={'toc':{'permalink':False},'pymdownx.arithmatex':{'generic':True}})
         rendered=md.convert(body)
         for i,tex in enumerate(formulas):
+            if tex.startswith('$$'):tex=r'\['+tex[2:-2]+r'\]'
             display=tex.startswith(r'\[')
             rendered=rendered.replace('MATHPLACEHOLDER'+str(i)+'END','<span class="arithmatex'+(' math-display' if display else '')+'">'+html.escape(tex)+'</span>')
         rendered=bleach.clean(rendered,tags=['a','p','br','hr','h1','h2','h3','h4','h5','h6','ul','ol','li','strong','em','blockquote','code','pre','img','table','thead','tbody','tr','th','td','del','span','div','sup','sub','dl','dt','dd'],attributes={'*':['id','class'],'a':['href','title'],'img':['src','alt','title'],'ol':['start'],'td':['align'],'th':['align']},protocols=['http','https','mailto'],strip=True)
