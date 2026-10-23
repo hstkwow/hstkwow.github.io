@@ -1,5 +1,5 @@
 // Edit these entries to update your project portfolio. All fields contain plain text.
-window.PORTFOLIO_PROJECTS = [
+export default [
   {
     "id": "warehouse",
     "topic": "IoT Systems",

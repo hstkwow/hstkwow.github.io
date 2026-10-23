@@ -34,7 +34,7 @@ Then:
 .venv/bin/python scripts/preview.py
 ```
 
-Open `http://localhost:8000/papers.html`. The preview watches `notes/`; after saving a note or adding a new folder, wait about a second and refresh. Existing generated content can also be opened directly from `papers.html`, but newly edited Markdown requires a rebuild first.
+Open `http://localhost:8000/papers.html`. The preview watches `notes/`; after saving a note or adding a new folder, wait about a second and refresh. The site must be served over HTTP (it uses ES modules and `fetch`); opening `papers.html` as a local file will not work.
 
 For a one-off rebuild:
 
@@ -42,10 +42,10 @@ For a one-off rebuild:
 .venv/bin/python scripts/build_notes.py
 ```
 
-`assets/data/reading-index.js` is generated; do not edit it manually. Invalid YAML, negative time spans, missing images or broken note links fail the build instead of silently publishing a broken note.
+`assets/data/reading/` (manifest, per-note JSON, search index and WebP copies of screenshots) is generated and git-ignored; do not edit it manually. Pillow is required for the WebP conversion. Invalid YAML, negative time spans, missing images or broken note links fail the build instead of silently publishing a broken note.
 
 ## GitHub Pages: one-time setup
 
 The supplied `.github/workflows/pages.yml` builds notes and publishes the site on each push to `main`. Before relying on automatic publication, set the repository's **Settings → Pages → Build and deployment → Source** to **GitHub Actions**. This change has not been made automatically.
 
-Once enabled, adding a note requires only the Markdown, its images, and a normal commit/push. The workflow rebuilds the index, so you do not need to update a list or commit the generated index for online publication. If a build fails, the existing deployment stays live; inspect the Actions log. Source files and imported screenshots are public when the repository and site are public.
+Once enabled, adding a note requires only the Markdown, its images, and a normal commit/push. The workflow rebuilds the index, so you do not need to update a list or commit generated files for online publication. If a build fails, the existing deployment stays live; inspect the Actions log. Source files and imported screenshots are public when the repository and site are public.

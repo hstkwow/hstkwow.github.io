@@ -163,3 +163,195 @@
     font-size:26px
   }
 }
+/* FIG. 01 — live pansharpening figure */
+.hero-fallback[hidden],.sensor[hidden] {
+  display:none
+}
+.sensor {
+  margin:0;
+  min-width:0
+}
+.sensor-frame {
+  position:relative;
+  border:1px solid var(--ink);
+  background:var(--paper)
+}
+.sensor-frame:before,.sensor-frame:after {
+  content:"";
+  position:absolute;
+  width:12px;
+  height:12px;
+  border:solid var(--accent);
+  pointer-events:none;
+  z-index:1
+}
+.sensor-frame:before {
+  top:-5px;
+  left:-5px;
+  border-width:2px 0 0 2px
+}
+.sensor-frame:after {
+  bottom:-5px;
+  right:-5px;
+  border-width:0 2px 2px 0
+}
+.sensor canvas {
+  display:block;
+  width:100%;
+  aspect-ratio:4/3;
+  cursor:crosshair;
+  touch-action:pan-y
+}
+.sensor canvas.dragging {
+  cursor:grabbing
+}
+.sensor canvas:focus-visible {
+  outline:2px solid var(--accent);
+  outline-offset:4px
+}
+.sensor-hud {
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  font:10px/1.4 "Courier New",monospace;
+  letter-spacing:.6px;
+  color:#f4f0e7
+}
+.sensor-hud span {
+  position:absolute;
+  padding:3px 6px;
+  background:#16161399;
+  backdrop-filter:blur(3px)
+}
+.sensor-hud span:nth-child(1) {
+  top:8px;
+  left:8px
+}
+.sensor-hud span:nth-child(2) {
+  top:8px;
+  right:8px
+}
+.sensor-hud span:nth-child(3) {
+  bottom:8px;
+  left:8px
+}
+.sensor-hud span:nth-child(4) {
+  bottom:8px;
+  right:8px;
+  color:#f3a58f
+}
+.sensor-controls {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px 12px;
+  align-items:center;
+  margin-top:14px
+}
+.seg {
+  display:inline-flex
+}
+.seg button,.pass-button {
+  font:10px/1.6 "Courier New",monospace;
+  letter-spacing:.8px;
+  padding:4px 9px;
+  border-color:var(--line)
+}
+.seg button+button {
+  border-left:0
+}
+.seg button[aria-pressed="true"] {
+  background:var(--ink);
+  color:var(--paper);
+  border-color:var(--ink)
+}
+.pass-button {
+  margin-left:auto
+}
+.spectrum {
+  margin-top:12px;
+  padding-top:8px;
+  border-top:1px solid var(--line)
+}
+.home .hero-art .spectrum svg {
+  display:block;
+  width:100%;
+  height:auto;
+  max-height:none;
+  overflow:visible
+}
+.spectrum-grid path {
+  fill:none;
+  stroke:var(--line);
+  stroke-width:.6;
+  stroke-dasharray:2 3
+}
+.spectrum polyline {
+  fill:none;
+  stroke-width:1.6;
+  stroke-linejoin:round;
+  transition:all .12s linear
+}
+.spectrum-ms {
+  stroke:var(--muted);
+  stroke-dasharray:4 3
+}
+.spectrum-fused {
+  stroke:var(--accent)
+}
+.spectrum circle {
+  fill:var(--paper);
+  stroke:var(--accent);
+  stroke-width:1.4;
+  transition:cy .12s linear
+}
+.spectrum-axis text {
+  font:8px "Courier New",monospace;
+  fill:var(--muted);
+  text-anchor:middle
+}
+.spectrum-axis text:first-child {
+  text-anchor:start
+}
+.spectrum-axis text:last-child {
+  text-anchor:end
+}
+.spectrum-legend {
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px 16px;
+  margin-top:4px;
+  font:10px/1.6 "Courier New",monospace;
+  color:var(--muted)
+}
+.spectrum-legend span:last-child {
+  margin-left:auto;
+  color:var(--ink);
+  text-transform:uppercase
+}
+.spectrum-legend i {
+  display:inline-block;
+  width:16px;
+  vertical-align:middle;
+  margin-right:6px;
+  border-top:1.6px dashed var(--muted)
+}
+.spectrum-legend .key-fused {
+  border-top:1.6px solid var(--accent)
+}
+.sensor .caption {
+  margin-top:10px
+}
+.sensor-note {
+  font-size:12px;
+  color:var(--muted);
+  margin:8px 0 0;
+  line-height:1.7
+}
+.home .hero-art {
+  justify-content:flex-start
+}
+@media(max-width:760px) {
+  .pass-button {
+    margin-left:0
+  }
+}
