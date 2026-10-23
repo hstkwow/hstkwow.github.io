@@ -4,15 +4,16 @@ Three static page entry points; shared assets are kept under `assets/`. There is
 no Node build: pages load native ES modules, and only the reading notes are compiled (by Python).
 
 ```text
-index.html                Home (with the live pansharpening figure)
+index.html                Home (with the live globe figure)
 projects.html             Projects
 papers.html               Reading collection and note viewer
 assets/
   css/base.css            Shared theme, navigation, command palette, document columns
-  css/home.css            Homepage layout and FIG. 01
+  css/home.css            Homepage layout, FIG. 01 and scroll reveals
   css/reading.css         Markdown, collection, acquisition log, figure viewer
   js/core/                Shared modules: theme, masthead, ⌘K palette, data loading
-  js/home/sensor.js       WebGL pansharpening demo (procedural scene, LRMS/PAN/fused, spectra)
+  js/home/globe.js        Ink-drawn dot-matrix Earth with a sun-synchronous satellite and swath
+  data/land.js            4 KB land mask for the globe (regenerate with scripts/land_mask.py)
   js/reading/             Reading app: routing, lazy MathJax, zoomable figures, timeline
   js/projects/main.js     Project browsing (?project=<id> links)
   data/projects.js        Editable project content (ES module)
