@@ -11,7 +11,7 @@ assets/
   css/base.css            Shared theme, navigation, command palette, document columns
   css/home.css            Homepage layout, FIG. 01 and scroll reveals
   css/reading.css         Markdown, collection, acquisition log, figure viewer
-  js/core/                Shared modules: theme, masthead, ⌘K palette, data loading
+  js/core/                Shared modules: theme, masthead, ⌘K palette, data loading, motion (fx.js)
   js/home/globe.js        Ink-drawn dot-matrix Earth with a sun-synchronous satellite and swath
   data/land.js            4 KB land mask for the globe (regenerate with scripts/land_mask.py)
   js/reading/             Reading app: routing, lazy MathJax, zoomable figures, timeline

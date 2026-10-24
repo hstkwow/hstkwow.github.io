@@ -607,3 +607,68 @@ mjx-container[display="true"] {
     animation:none
   }
 }
+/* Frameless collection: entries read as a list, not a grid of boxes. */
+.reading-stats,.note-heading,.acq-log {
+  border-bottom:0
+}
+.note-cards {
+  border:0;
+  column-gap:48px
+}
+.note-card {
+  min-height:0;
+  padding:26px 0 30px;
+  border:0;
+  border-top:1px solid color-mix(in srgb,var(--line) 45%,transparent)
+}
+.note-card:hover,.note-card.linked {
+  background:none
+}
+.note-card:hover h3,.note-card.linked h3 {
+  color:var(--accent)
+}
+.note-card h3 {
+  margin:10px 0 6px;
+  transition:color .2s
+}
+.note-card h3 span {
+  transition:transform .25s ease
+}
+.note-card:hover h3 span {
+  transform:translate(3px,-3px)
+}
+.card-meta {
+  padding-top:12px
+}
+.markdown-body h2 {
+  border-bottom:0;
+  padding-bottom:0
+}
+.markdown-body img {
+  border:0
+}
+/* First view of the collection: entries arrive in sequence; a newly opened note's title is wiped in. */
+.motion .note-cards.arrive .note-card {
+  animation:card-in .7s cubic-bezier(.2,.7,.2,1) both;
+  animation-delay:calc(var(--i,0) * 55ms + 150ms)
+}
+@keyframes card-in {
+  from {
+    opacity:0;
+    transform:translateY(16px)
+  }
+}
+.motion .note-article .paper-title,.motion .project-entry .paper-title {
+  animation:wipe 1s cubic-bezier(.7,0,.2,1) both
+}
+@keyframes wipe {
+  from {
+    clip-path:inset(0 100% -10% 0)
+  }
+  to {
+    clip-path:inset(0 0 -10% 0)
+  }
+}
+.motion .overview-heading.arrive h1 {
+  animation:wipe 1s cubic-bezier(.7,0,.2,1) .1s both
+}

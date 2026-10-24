@@ -1,16 +1,17 @@
 // Shared initialization for Home, Projects and Reading.
-import { $ } from './dom.js';
+import { $, reducedMotion } from './dom.js';
 import { initPalette } from './palette.js';
 
-// Theme: the inline <head> script applies the stored choice before first paint.
+// Theme: the inline <head> script applies the stored choice before first paint; the button
+// shows a sun or a moon through CSS.
 (() => {
   const button = $('theme');
   if (!button) return;
   function set(dark, store) {
     document.documentElement.classList.toggle('dark', dark);
-    button.textContent = dark ? 'Light ◑' : 'Dark ◐';
     button.setAttribute('aria-pressed', String(dark));
     button.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+    button.title = dark ? 'Light theme' : 'Dark theme';
     if (store) try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch {}
     document.dispatchEvent(new CustomEvent('themechange', { detail: { dark } }));
   }
@@ -18,32 +19,33 @@ import { initPalette } from './palette.js';
   button.addEventListener('click', () => set(!document.documentElement.classList.contains('dark'), true));
 })();
 
-// Show the current page and entry in the compact masthead after its introduction scrolls away.
+// Capsule navigation: a highlight slides to the hovered link and settles back on the current page.
 (() => {
   const masthead = document.querySelector('.masthead');
-  if (!masthead) return;
-  const current = document.createElement('span');
-  current.className = 'nav-context';
-  current.setAttribute('aria-hidden', 'true');
-  masthead.insertBefore(current, masthead.querySelector('nav'));
-  const page = document.body.dataset.page || 'Home';
-  const marker = () => document.querySelector('.overview-heading') || document.querySelector('.note-heading') || document.querySelector('.reading-head') || document.querySelector('main > header');
-  let scheduled = false;
-  function update() {
-    scheduled = false;
-    const entry = document.querySelector('#detail .paper-title')?.textContent.trim();
-    const label = page + ' / ' + (entry || (page === 'Home' ? 'Sun Tao' : page));
-    if (current.textContent !== label) { current.textContent = label; current.title = label; }
-    const m = marker();
-    const passed = m ? m.getBoundingClientRect().bottom <= masthead.getBoundingClientRect().bottom : window.scrollY > 160;
-    current.classList.toggle('visible', passed && window.scrollY > 32);
+  const nav = masthead?.querySelector('nav');
+  const pill = nav?.querySelector('.nav-indicator');
+  if (!pill) return;
+  const current = nav.querySelector('[aria-current="page"]');
+  function moveTo(link, instant) {
+    if (!link) { pill.style.opacity = '0'; return; }
+    if (instant || reducedMotion()) pill.style.transition = 'none';
+    pill.style.opacity = '1';
+    pill.style.width = link.offsetWidth + 'px';
+    pill.style.transform = `translateX(${link.offsetLeft}px)`;
+    if (instant) requestAnimationFrame(() => requestAnimationFrame(() => pill.style.removeProperty('transition')));
   }
-  function schedule() { if (!scheduled) { scheduled = true; requestAnimationFrame(update); } }
-  window.addEventListener('scroll', schedule, { passive: true });
-  window.addEventListener('resize', schedule);
-  const detail = $('detail');
-  if (detail) new MutationObserver(schedule).observe(detail, { childList: true });
-  update();
+  nav.addEventListener('pointerover', e => { const a = e.target.closest('a'); if (a) moveTo(a); });
+  nav.addEventListener('focusin', e => { const a = e.target.closest('a'); if (a) moveTo(a); });
+  nav.addEventListener('pointerleave', () => moveTo(current));
+  nav.addEventListener('focusout', e => { if (!nav.contains(e.relatedTarget)) moveTo(current); });
+  // Place the highlight once fonts have settled so its width matches the link.
+  moveTo(current, true);
+  document.fonts?.ready.then(() => moveTo(current, true));
+  addEventListener('resize', () => moveTo(current, true));
+  // The capsule gains a little depth once the page has scrolled beneath it.
+  const onScroll = () => masthead.classList.toggle('scrolled', scrollY > 8);
+  addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
 })();
 
 initPalette();

@@ -111,6 +111,6 @@ export function initPalette() {
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
     if ((e.key === 'k' && (e.metaKey || e.ctrlKey)) || (e.key === '/' && !typing)) { e.preventDefault(); openPalette(); }
   });
-  const key = document.querySelector('#palette-open kbd');
-  if (key && !/Mac|iPhone|iPad/.test(navigator.platform)) key.textContent = 'Ctrl K';
+  const trigger = document.getElementById('palette-open');
+  if (trigger && !/Mac|iPhone|iPad/.test(navigator.platform)) trigger.title = 'Search  Ctrl K';
 }

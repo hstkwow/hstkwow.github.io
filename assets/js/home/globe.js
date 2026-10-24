@@ -46,7 +46,7 @@ export function initGlobe(figure) {
   const still = reducedMotion();
   const state = {
     w: 0, h: 0, dpr: 1, yaw: -HOME.lon * RAD + 0.35, pitch: 0.42, spin: 0, drag: null, hover: null,
-    t: still ? 4.2 : 0, last: performance.now(), visible: true, frame: 0, ink: '', accent: '', paper: '',
+    t: still ? 4.2 : 0, intro: still ? 99 : 0, cxf: 0.5, last: performance.now(), visible: true, frame: 0, ink: '', accent: '', paper: '',
   };
   function theme() { state.ink = colour('--ink'); state.accent = colour('--accent'); state.paper = colour('--paper'); }
   theme();
@@ -55,8 +55,12 @@ export function initGlobe(figure) {
     const r = canvas.getBoundingClientRect();
     state.dpr = Math.min(devicePixelRatio || 1, 2);
     state.w = r.width; state.h = r.height;
+    // The stylesheet decides where the globe sits inside its stage (--globe-x, 0–1).
+    state.cxf = parseFloat(getComputedStyle(figure).getPropertyValue('--globe-x')) || 0.5;
     canvas.width = Math.round(r.width * state.dpr); canvas.height = Math.round(r.height * state.dpr);
   }
+
+  const radius = () => Math.min(state.w * 0.3, state.h * 0.33);
 
   // Earth-fixed (lon, lat) → screen, given the current Earth rotation θ.
   function project(lon, lat, k, theta, view) {
@@ -77,33 +81,180 @@ export function initGlobe(figure) {
   const thetaAt = t => 2 * Math.PI * t / EARTH_SECONDS;
   const uAt = t => 2 * Math.PI * t / ORBIT_SECONDS + 1.1;
 
+
+  // ── The spacecraft ───────────────────────────────────────────────────────────────────────
+  // A small Earth-observation satellite drawn as a technical illustration: ink edges over
+  // paper-toned faces, shaded by one fixed light. Parts are modelled in the craft's own frame
+  // (a: along track, b: across track, c: radial, up) and projected with the globe's view;
+  // faces are depth-sorted, and each face carries its own surface detail.
+  const add = (a, b, k = 1) => [a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k];
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const norm = a => { const l = Math.hypot(...a) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+  const LIGHT = norm([-0.5, 0.75, 0.5]);
+  const rgb = s => s.split(',').map(Number);
+  function satVec(t) {
+    const o = orbit(uAt(t)), L = o.L + state.yaw, c = Math.cos(o.lat);
+    return [c * Math.sin(L), Math.sin(o.lat), c * Math.cos(L)];
+  }
+  function toView(v) {
+    const sp = Math.sin(state.pitch), cp = Math.cos(state.pitch);
+    return [v[0], v[1] * cp - v[2] * sp, v[1] * sp + v[2] * cp];
+  }
+
+  function buildCraft(t) {
+    const parts = [];   // { poly: [model pts], n: model normal, tone, detail: [[p, q], …], solid, dark }
+    const face = (poly, n, tone, opts = {}) => parts.push({ poly, n, tone, ...opts });
+    const line = (p, q, opts = {}) => parts.push({ seg: [p, q], ...opts });
+    const lerp = (p, q, k) => [p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k, p[2] + (q[2] - p[2]) * k];
+
+    // Bus: foil-wrapped box with radiator fins on the sides and seams on the ends.
+    const E = [1.0, 0.85, 1.05];
+    for (let axis = 0; axis < 3; axis++) for (const sgn of [1, -1]) {
+      const [i, j] = [0, 1, 2].filter(k => k !== axis);
+      const corner = (u, w) => { const m = [0, 0, 0]; m[axis] = sgn * E[axis]; m[i] = u * E[i]; m[j] = w * E[j]; return m; };
+      const poly = [corner(-1, -1), corner(1, -1), corner(1, 1), corner(-1, 1)];
+      const n = [0, 0, 0]; n[axis] = sgn;
+      const detail = [];
+      if (axis === 1) for (let k = 1; k < 8; k++) detail.push([corner(-1 + k / 4, -0.8), corner(-1 + k / 4, 0.8)]);            // radiator fins
+      else for (const k of [-0.4, 0.35]) detail.push([corner(-1, k), corner(1, k + 0.08)]);                                   // MLI seams
+      face(poly, n, axis === 1 ? 0.06 : 0.14, { solid: true, detail });
+    }
+
+    // Cylinder helper: rings around an axis, facets shaded individually, with optional end cap.
+    function cylinder(base, axis, radius, length, sides, tone, cap) {
+      const ax = norm(axis), ref = Math.abs(ax[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0];
+      const u = norm(cross(ax, ref)), w = cross(ax, u), top = add(base, ax, length);
+      const ring = (c, r, k) => add(add(c, u, Math.cos(k) * r), w, Math.sin(k) * r);
+      for (let s = 0; s < sides; s++) {
+        const k0 = s / sides * 2 * Math.PI, k1 = (s + 1) / sides * 2 * Math.PI, km = (k0 + k1) / 2;
+        face([ring(base, radius, k0), ring(base, radius, k1), ring(top, radius, k1), ring(top, radius, k0)],
+          norm(add(add([0, 0, 0], u, Math.cos(km)), w, Math.sin(km))), tone, { solid: true, facet: true });
+      }
+      if (cap) face(Array.from({ length: sides }, (_, s) => ring(top, radius, s / sides * 2 * Math.PI)), ax, cap.tone, { solid: true, ...cap });
+      return { top, u, w };
+    }
+
+    // Camera: barrel to nadir, a wider sunshade at its mouth, and the aperture with a glint.
+    cylinder([0, 0, -E[2]], [0, 0, -1], 0.52, 0.95, 18, 0.1);
+    const shade = cylinder([0, 0, -E[2] - 0.95], [0, 0, -1], 0.62, 0.32, 18, 0.18, { tone: 0.85, aperture: true });
+    void shade;
+
+    // Two star trackers on the zenith face, each with a baffle.
+    for (const side of [1, -1]) cylinder([-0.45, side * 0.42, E[2]], [-0.35, side * 0.45, 1], 0.17, 0.42, 10, 0.12, { tone: 0.6 });
+
+    // X-band antenna on a short boom, dish facing the ground.
+    const boomEnd = [E[0] + 0.45, 0.2, -0.75];
+    line([E[0], 0.2, -0.4], boomEnd);
+    const dish = Array.from({ length: 16 }, (_, s) => { const k = s / 16 * 2 * Math.PI; return [boomEnd[0] + Math.cos(k) * 0.38, boomEnd[1] + Math.sin(k) * 0.38, boomEnd[2] - 0.12]; });
+    face(dish, [0, 0, -1], 0.08, { solid: false });
+
+    // Solar wings: three hinged panels each, turned about the across-track axis toward the sun.
+    const beta = 0.5 + 0.3 * Math.sin(t * 0.3), ca = Math.cos(beta), sa = Math.sin(beta);
+    const onWing = (s, b) => [s * ca, b, s * sa];
+    for (const side of [1, -1]) {
+      const root = E[1] + 0.55, pw = 1.3, gap = 0.08, hw = 0.95;
+      // Yoke: two struts from the bus to the inboard panel, and the drive shaft.
+      line([0.0, side * E[1], 0.35], onWing(0, side * root));
+      line([0.0, side * E[1], -0.35], onWing(0, side * root));
+      line([0.0, side * E[1], 0], onWing(0, side * root));
+      for (let k = 0; k < 3; k++) {
+        const b0 = side * (root + k * (pw + gap)), b1 = side * (root + k * (pw + gap) + pw);
+        const P0 = onWing(-hw, b0), P1 = onWing(hw, b0), P2 = onWing(hw, b1), P3 = onWing(-hw, b1);
+        const detail = [];
+        for (let c = 1; c < 6; c++) detail.push([lerp(P0, P3, c / 6), lerp(P1, P2, c / 6)]);       // cell rows
+        for (let c = 1; c < 4; c++) detail.push([lerp(P0, P1, c / 4), lerp(P3, P2, c / 4)]);       // cell columns
+        face([P0, P1, P2, P3], [-sa, 0, ca], 0.42, { panel: true, detail });
+        if (k < 2) {   // hinges across the gap
+          for (const s of [-0.6, 0.6]) line(onWing(s, b1), onWing(s, b1 + side * gap));
+        }
+      }
+    }
+    return parts;
+  }
+
+  function drawCraft(view, t, alpha) {
+    if (alpha <= 0) return;
+    const r = satVec(t), v = norm(add(satVec(t + 0.02), r, -1));
+    const vh = norm(add(v, r, -dot(v, r))), nh = cross(r, vh);
+    const centre = [r[0] * ALTITUDE, r[1] * ALTITUDE, r[2] * ALTITUDE];
+    const S = Math.max(0.035, 13 / view.R);
+    const world = m => add(add(add(centre, vh, m[0] * S), nh, m[1] * S), r, m[2] * S);
+    const screen = m => { const w = toView(world(m)); return { x: view.cx + w[0] * view.R, y: view.cy - w[1] * view.R, z: w[2] }; };
+    const dirView = m => toView(norm(add(add(vh.map(x => x * m[0]), nh, m[1]), r, m[2])));
+    const ink = rgb(state.ink), paper = rgb(state.paper);
+    const mix = k => paper.map((p, i) => Math.round(p + (ink[i] - p) * k)).join(',');
+
+    const items = buildCraft(t).map(p => {
+      if (p.seg) { const a = screen(p.seg[0]), b = screen(p.seg[1]); return { ...p, a, b, z: (a.z + b.z) / 2 }; }
+      const pts = p.poly.map(screen);
+      return { ...p, pts, nv: dirView(p.n), z: pts.reduce((s, q) => s + q.z, 0) / pts.length };
+    }).sort((a, b) => a.z - b.z);
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    const stroke = (a, b) => { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); };
+    for (const it of items) {
+      if (it.seg) { ctx.strokeStyle = `rgba(${state.ink},.85)`; ctx.lineWidth = 0.8; stroke(it.a, it.b); continue; }
+      let n = it.nv;
+      if (it.solid && n[2] <= 0) continue;
+      const back = n[2] < 0;
+      if (back) n = n.map(x => -x);
+      const lit = Math.max(0, dot(n, LIGHT));
+      // Tone: how much ink the face takes. Panels are dark cells; their backs are pale substrate.
+      let tone = it.panel && back ? 0.1 : it.tone;
+      tone = Math.min(0.95, tone + (1 - lit) * (it.panel && !back ? 0.3 : 0.22));
+      // Glass is dark in either theme; everything else takes ink in proportion to its tone.
+      ctx.fillStyle = it.aperture ? 'rgb(22,22,20)' : `rgb(${mix(tone)})`;
+      ctx.beginPath(); it.pts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.closePath();
+      ctx.fill();
+      // Facets of a cylinder share edges: stroke them in their own tone so no seams show.
+      if (it.facet) { ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = 0.7; ctx.stroke(); }
+      else { ctx.strokeStyle = `rgba(${state.ink},.9)`; ctx.lineWidth = 0.8; ctx.stroke(); }
+      if (it.detail && !(it.panel && back)) {
+        ctx.strokeStyle = it.panel ? `rgba(${state.paper},${(0.25 + 0.35 * lit).toFixed(2)})` : `rgba(${state.ink},.4)`;
+        ctx.lineWidth = 0.5;
+        for (const [p, q] of it.detail) stroke(screen(p), screen(q));
+      }
+      if (it.panel && !back) {   // specular sheen across the cells
+        const sheen = Math.pow(Math.max(0, dot(n, norm(add(LIGHT, [0, 0, 1])))), 18);
+        if (sheen > 0.02) { ctx.fillStyle = `rgba(255,255,255,${(sheen * 0.35).toFixed(3)})`; ctx.fill(); }
+      }
+      if (it.aperture) {
+        const c = it.pts.reduce((s, q) => ({ x: s.x + q.x / it.pts.length, y: s.y + q.y / it.pts.length }), { x: 0, y: 0 });
+        ctx.fillStyle = `rgb(${state.accent})`;
+        ctx.beginPath(); ctx.arc(c.x - 0.8, c.y - 0.8, Math.max(1, S * view.R * 0.12), 0, 2 * Math.PI); ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
   function draw() {
     const { w, h, dpr, ink, accent } = state;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
-    const R = Math.min(w * 0.3, h * 0.36), view = { cx: w / 2, cy: h / 2, R, x: 0, y: 0, z: 0 };
+    const R = radius(), view = { cx: w * state.cxf, cy: h / 2, R, x: 0, y: 0, z: 0 };
     const theta = thetaAt(state.t);
-
-    // Drafting grid behind the figure, as in the printed version.
-    ctx.strokeStyle = `rgba(${ink},.07)`; ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let x = (w / 2) % 20; x < w; x += 20) { ctx.moveTo(Math.round(x) + .5, 0); ctx.lineTo(Math.round(x) + .5, h); }
-    for (let y = (h / 2) % 20; y < h; y += 20) { ctx.moveTo(0, Math.round(y) + .5); ctx.lineTo(w, Math.round(y) + .5); }
-    ctx.stroke();
-    // Cross-hair ticks at the frame edges.
-    ctx.strokeStyle = `rgba(${ink},.45)`;
-    ctx.beginPath();
-    ctx.moveTo(8, h / 2); ctx.lineTo(40, h / 2); ctx.moveTo(w - 40, h / 2); ctx.lineTo(w - 8, h / 2);
-    ctx.moveTo(w / 2, 6); ctx.lineTo(w / 2, 20); ctx.moveTo(w / 2, h - 20); ctx.lineTo(w / 2, h - 6);
-    ctx.stroke();
+    // Opening sequence: the limb is drawn, the surface is imaged row by row, then the orbit
+    // is traced and the satellite switches on.
+    const I = state.intro, clamp = x => Math.max(0, Math.min(1, x)), ease = x => 1 - Math.pow(1 - x, 3);
+    const limb = ease(clamp(I / 0.9)), grat = clamp((I - 0.4) / 0.8), scan = ease(clamp((I - 0.3) / 1.6));
+    const orbitDrawn = ease(clamp((I - 1.1) / 1.1)), live = clamp((I - 1.9) / 0.5);
+    const scanY = view.cy - R + 2 * R * scan;
 
     // Disc and limb.
+    const halo = ctx.createRadialGradient(view.cx, view.cy, R, view.cx, view.cy, R * 1.16);
+    halo.addColorStop(0, `rgba(${accent},${(0.1 * limb).toFixed(3)})`); halo.addColorStop(1, `rgba(${accent},0)`);
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(view.cx, view.cy, R * 1.16, 0, 2 * Math.PI); ctx.fill();
     ctx.fillStyle = `rgb(${state.paper})`;
     ctx.beginPath(); ctx.arc(view.cx, view.cy, R, 0, 2 * Math.PI); ctx.fill();
-    ctx.strokeStyle = `rgba(${ink},.85)`; ctx.lineWidth = 1.3; ctx.stroke();
+    ctx.strokeStyle = `rgba(${ink},.85)`; ctx.lineWidth = 1.3;
+    ctx.beginPath(); ctx.arc(view.cx, view.cy, R, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI * limb); ctx.stroke();
 
     // Graticule: front hemisphere only.
-    ctx.strokeStyle = `rgba(${ink},.16)`; ctx.lineWidth = .8;
+    ctx.strokeStyle = `rgba(${ink},${(0.16 * grat).toFixed(3)})`; ctx.lineWidth = .8;
     ctx.beginPath();
     const p = { ...view };
     const line = (lon0, lat0, lon1, lat1, steps) => {
@@ -122,10 +273,24 @@ export function initGlobe(figure) {
     const size = Math.max(1.1, R / 120);
     for (let i = 0; i < land.length; i += 2) {
       project(land[i], land[i + 1], 1, theta, p);
-      if (p.z <= 0.02) continue;
+      if (p.z <= 0.02 || p.y > scanY) continue;
       ctx.fillStyle = `rgba(${ink},${(0.18 + 0.72 * p.z).toFixed(2)})`;
       ctx.fillRect(p.x - size / 2, p.y - size / 2, size, size);
     }
+
+    // The imaging line while the surface is still being acquired.
+    if (scan > 0 && scan < 1) {
+      const half = Math.sqrt(Math.max(0, R * R - (scanY - view.cy) ** 2));
+      const glow = ctx.createLinearGradient(0, scanY - 28, 0, scanY);
+      glow.addColorStop(0, `rgba(${accent},0)`); glow.addColorStop(1, `rgba(${accent},.22)`);
+      ctx.save();
+      ctx.beginPath(); ctx.arc(view.cx, view.cy, R, 0, 2 * Math.PI); ctx.clip();
+      ctx.fillStyle = glow; ctx.fillRect(view.cx - R, scanY - 28, 2 * R, 28);
+      ctx.restore();
+      ctx.strokeStyle = `rgb(${accent})`; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(view.cx - half - 14, scanY); ctx.lineTo(view.cx + half + 14, scanY); ctx.stroke();
+    }
+    ctx.globalAlpha = live;
 
     // Ground track and swath over the last orbit and a bit, fading with age.
     const now = state.t, track = 150, span = ORBIT_SECONDS * 1.15;
@@ -145,6 +310,7 @@ export function initGlobe(figure) {
     }
 
     // Home marker.
+    ctx.globalAlpha = clamp((I - 1.5) / 0.4);
     project(HOME.lon * RAD, HOME.lat * RAD, 1, theta, p);
     const sat = orbit(uAt(now)), satLon = sat.L - theta;
     const near = Math.acos(Math.min(1, Math.sin(sat.lat) * Math.sin(HOME.lat * RAD) + Math.cos(sat.lat) * Math.cos(HOME.lat * RAD) * Math.cos(satLon - HOME.lon * RAD))) < 9 * RAD;
@@ -171,8 +337,9 @@ export function initGlobe(figure) {
       q.hidden = q.z < 0 && Math.hypot(q.x - view.cx, q.y - view.cy) < R;
       ring.push(q);
     }
+    ctx.globalAlpha = 1;
     ctx.lineWidth = 1.1;
-    for (let s = 1; s <= steps; s++) {
+    for (let s = 1; s <= steps * orbitDrawn; s++) {
       const a = ring[s - 1], b = ring[s];
       ctx.setLineDash(b.hidden ? [] : [5, 4]);
       ctx.strokeStyle = b.hidden ? `rgba(${accent},.15)` : `rgba(${accent},${b.z < 0 ? .45 : .9})`;
@@ -181,6 +348,7 @@ export function initGlobe(figure) {
     ctx.setLineDash([]);
 
     // Satellite with its imaging beam down to the swath.
+    ctx.globalAlpha = live;
     const sp = project(satLon, sat.lat, ALTITUDE, theta, { ...view });
     const hidden = sp.z < 0 && Math.hypot(sp.x - view.cx, sp.y - view.cy) < R;
     const ahead = orbit(uAt(now + 0.05)), ap = project(ahead.L - thetaAt(now + 0.05), ahead.lat, ALTITUDE, theta, { ...view });
@@ -192,16 +360,8 @@ export function initGlobe(figure) {
       ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(nadir.x + gx, nadir.y + gy); ctx.lineTo(nadir.x - gx, nadir.y - gy); ctx.closePath();
       ctx.fill(); ctx.stroke();
     }
-    ctx.save();
-    ctx.translate(sp.x, sp.y);
-    ctx.rotate(Math.atan2(ap.y - sp.y, ap.x - sp.x) + Math.PI / 2);
-    ctx.globalAlpha = hidden ? 0.25 : 1;
-    ctx.fillStyle = `rgb(${state.paper})`; ctx.strokeStyle = `rgb(${ink})`; ctx.lineWidth = 1.2; ctx.lineJoin = 'round';
-    const s = Math.max(0.55, R / 190);
-    ctx.scale(s, s);
-    for (const [x, y, rw, rh] of [[-6, -5, 12, 10], [-22, -7, 13, 14], [9, -7, 13, 14]]) { ctx.fillRect(x, y, rw, rh); ctx.strokeRect(x, y, rw, rh); }
-    ctx.beginPath(); ctx.moveTo(-15.5, -7); ctx.lineTo(-15.5, 7); ctx.moveTo(15.5, -7); ctx.lineTo(15.5, 7); ctx.moveTo(0, -5); ctx.lineTo(0, -11); ctx.stroke();
-    ctx.restore();
+    drawCraft(view, now, live * (hidden ? 0.25 : 1));
+    ctx.globalAlpha = 1;
 
     // Cursor position on the surface.
     if (state.hover) {
@@ -209,11 +369,6 @@ export function initGlobe(figure) {
       ctx.strokeStyle = `rgba(${accent},.9)`; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(x - 7, y); ctx.lineTo(x - 2, y); ctx.moveTo(x + 2, y); ctx.lineTo(x + 7, y); ctx.moveTo(x, y - 7); ctx.lineTo(x, y - 2); ctx.moveTo(x, y + 2); ctx.lineTo(x, y + 7); ctx.stroke();
     }
-
-    ctx.fillStyle = `rgba(${ink},.8)`; ctx.font = '9px "Courier New", monospace';
-    ctx.fillText('OBSERVATION / 001', 10, 18);
-    const tag = 'SUN-SYNCHRONOUS · i 98°';
-    ctx.fillText(tag, w - 10 - ctx.measureText(tag).width, h - 10);
 
     // Caption readout, a few times a second.
     if (state.frame++ % 6 === 0) {
@@ -226,8 +381,8 @@ export function initGlobe(figure) {
 
   // Screen → Earth-fixed coordinates (inverse orthographic), or null off the disc.
   function unproject(x, y) {
-    const R = Math.min(state.w * 0.3, state.h * 0.36);
-    const X = (x - state.w / 2) / R, Y = -(y - state.h / 2) / R, r2 = X * X + Y * Y;
+    const R = radius();
+    const X = (x - state.w * state.cxf) / R, Y = -(y - state.h / 2) / R, r2 = X * X + Y * Y;
     if (r2 > 1) return null;
     const Z = Math.sqrt(1 - r2), sp = Math.sin(state.pitch), cp = Math.cos(state.pitch);
     const y0 = Y * cp + Z * sp, z0 = -Y * sp + Z * cp;
@@ -240,11 +395,11 @@ export function initGlobe(figure) {
     if (!state.visible) return;
     const dt = Math.min(0.05, (now - state.last) / 1000);
     state.last = now;
-    if (!still) state.t += dt;
+    if (!still) { state.t += dt; state.intro += dt; }
     if (!state.drag) { state.yaw += state.spin * dt; state.spin *= Math.pow(0.04, dt); }
     if (state.hover) Object.assign(state.hover, unproject(state.hover.x, state.hover.y) || { lat: null, lon: null });
     draw();
-    if (!still || state.drag || Math.abs(state.spin) > 0.002) request();
+    if (!still || state.intro < 3 || state.drag || Math.abs(state.spin) > 0.002) request();
   }
   function request() { if (!state.running && state.visible) { state.running = true; state.last = performance.now(); requestAnimationFrame(tick); } }
 
@@ -257,7 +412,7 @@ export function initGlobe(figure) {
     const q = local(e);
     state.hover = e.pointerType === 'mouse' ? { ...q } : null;
     if (state.drag) {
-      const R = Math.min(state.w * 0.3, state.h * 0.36), now = performance.now();
+      const R = radius(), now = performance.now();
       const dYaw = (q.x - state.drag.x) / R, dt = Math.max(1, now - state.drag.time) / 1000;
       state.yaw += dYaw;
       state.pitch = Math.max(-1.2, Math.min(1.2, state.pitch + (q.y - state.drag.y) / R));
