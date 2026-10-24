@@ -13,6 +13,7 @@ assets/
   css/reading.css         Markdown, collection, acquisition log, figure viewer
   js/core/                Shared modules: theme, masthead, ⌘K palette, data loading, motion (fx.js)
   js/home/globe.js        Ink-drawn dot-matrix Earth with a sun-synchronous satellite and swath
+  js/home/rail.js         Homepage track: the satellite orbiting the scroll rail
   data/land.js            4 KB land mask for the globe (regenerate with scripts/land_mask.py)
   js/reading/             Reading app: routing, lazy MathJax, zoomable figures, timeline
   js/projects/main.js     Project browsing (?project=<id> links)

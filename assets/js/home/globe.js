@@ -10,8 +10,10 @@ const RAD = Math.PI / 180;
 const ORBIT_SECONDS = 18;          // one revolution of the satellite
 const EARTH_SECONDS = 120;         // one turn of the Earth (wildly accelerated)
 const INCLINATION = 98 * RAD;      // sun-synchronous
-const NODE = 40 * RAD;             // right ascension of the ascending node
-const ALTITUDE = 1.42;             // orbit radius in Earth radii, exaggerated for legibility
+const NODE = 240 * RAD;            // right ascension of the ascending node; chosen so the pass
+                                   // crosses the face of the globe in the opening view, not its limb,
+                                   // and the craft swings out top-right and bottom-left, clear of text
+const ALTITUDE = 1.2;              // orbit radius in Earth radii, exaggerated for legibility
 const HOME = { lat: 39.07, lon: 117.10, name: 'TIANJIN' };
 
 // Fibonacci-sphere land dots as unit vectors in the Earth-fixed frame.
@@ -230,17 +232,30 @@ export function initGlobe(figure) {
     ctx.restore();
   }
 
+  // Ground track geometry. The orbit plane is spanned by A (ascending node) and B; N is its
+  // normal. A point off the track by an angle `off` across track is rotated toward N, which
+  // gives true swath edges on the sphere rather than a fat stroke on screen.
+  const A = [Math.sin(NODE), 0, Math.cos(NODE)];
+  const B = [Math.cos(INCLINATION) * Math.cos(NODE), Math.sin(INCLINATION), -Math.cos(INCLINATION) * Math.sin(NODE)];
+  const ORBIT_N = cross(A, B);
+  const SWATH = 4 * RAD;                 // half-width of the drawn swath (exaggerated)
+  function groundAt(t, off = 0) {
+    const u = uAt(t), cu = Math.cos(u), su = Math.sin(u), co = Math.cos(off), so = Math.sin(off);
+    const v = [0, 1, 2].map(i => (A[i] * cu + B[i] * su) * co + ORBIT_N[i] * so);
+    return { lat: Math.asin(v[1]), lon: Math.atan2(v[0], v[2]) - thetaAt(t) };
+  }
+
   function draw() {
     const { w, h, dpr, ink, accent } = state;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
     const R = radius(), view = { cx: w * state.cxf, cy: h / 2, R, x: 0, y: 0, z: 0 };
     const theta = thetaAt(state.t);
-    // Opening sequence: the limb is drawn, the surface is imaged row by row, then the orbit
-    // is traced and the satellite switches on.
+    // Opening sequence: the limb is drawn, the surface is imaged row by row, then the ground
+    // track is traced back from the satellite and the satellite switches on.
     const I = state.intro, clamp = x => Math.max(0, Math.min(1, x)), ease = x => 1 - Math.pow(1 - x, 3);
     const limb = ease(clamp(I / 0.9)), grat = clamp((I - 0.4) / 0.8), scan = ease(clamp((I - 0.3) / 1.6));
-    const orbitDrawn = ease(clamp((I - 1.1) / 1.1)), live = clamp((I - 1.9) / 0.5);
+    const trailDrawn = ease(clamp((I - 1.1) / 1.1)), live = clamp((I - 1.9) / 0.5);
     const scanY = view.cy - R + 2 * R * scan;
 
     // Disc and limb.
@@ -290,23 +305,57 @@ export function initGlobe(figure) {
       ctx.strokeStyle = `rgb(${accent})`; ctx.lineWidth = 1.2;
       ctx.beginPath(); ctx.moveTo(view.cx - half - 14, scanY); ctx.lineTo(view.cx + half + 14, scanY); ctx.stroke();
     }
-    ctx.globalAlpha = live;
+    ctx.globalAlpha = clamp((I - 1.1) / 0.3);
 
-    // Ground track and swath over the last orbit and a bit, fading with age.
-    const now = state.t, track = 150, span = ORBIT_SECONDS * 1.15;
-    ctx.lineCap = 'round';
-    for (const [width, alpha] of [[R * 0.075, 0.13], [1.2, 0.85]]) {
-      ctx.lineWidth = width;
-      let prev = null;
-      for (let s = 0; s <= track; s++) {
-        const t = now - span * (1 - s / track), o = orbit(uAt(t));
-        project(o.L - thetaAt(t), o.lat, 1, theta, p);
-        if (p.z > 0 && prev) {
-          ctx.strokeStyle = `rgba(${accent},${(alpha * (s / track) * Math.min(1, p.z * 3)).toFixed(3)})`;
-          ctx.beginPath(); ctx.moveTo(prev.x, prev.y); ctx.lineTo(p.x, p.y); ctx.stroke();
-        }
-        prev = p.z > 0 ? { x: p.x, y: p.y } : null;
+    // Ground track. Behind the satellite, about half an orbit of trail: a fine centre line with
+    // short timing ticks, between hairline swath edges, all fading toward the tail. The swath is
+    // only shaded right under the satellite. Equator crossings are labelled DN / AN.
+    const now = state.t, track = 96, span = ORBIT_SECONDS * 0.5, lead = 30, leadSpan = ORBIT_SECONDS * 0.18;
+    const at = (t, off) => { const g = groundAt(t, off); const q = project(g.lon, g.lat, 1, theta, { ...view }); q.lat = g.lat; return q; };
+    // Samples sit on a fixed grid of orbit time, so ticks, labels and vertices stay where they
+    // were laid down on the ground; only the newest piece, up to the satellite, grows each frame.
+    const step = span / track, base = Math.floor(now / step);
+    const samples = [];
+    const sample = (t, k) => samples.push({ c: at(t, 0), l: at(t, SWATH), r: at(t, -SWATH), age: (now - t) / span, k });
+    for (let k = base - track; k <= base; k++) sample(k * step, k);
+    if (now > base * step) sample(now, null);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const seg = (a, b, colour, width) => { ctx.strokeStyle = colour; ctx.lineWidth = width; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); };
+    const mid = (a, b, k) => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k });
+    for (let i = 1; i < samples.length; i++) {
+      const a = samples[i - 1], b = samples[i];
+      if (b.age > trailDrawn) continue;      // during the opening the trail grows back from the satellite
+      if (a.c.z <= 0 || b.c.z <= 0) continue;
+      const fade = Math.pow(Math.max(0, 1 - b.age), 1.3) * Math.min(1, b.c.z * 3);
+      if (fade < 0.01) continue;
+      if (b.age < 0.22) {                     // a light shade of the swath just under the satellite
+        ctx.fillStyle = `rgba(${accent},${(0.07 * (1 - b.age / 0.22) * fade).toFixed(3)})`;
+        ctx.beginPath(); ctx.moveTo(a.l.x, a.l.y); ctx.lineTo(b.l.x, b.l.y); ctx.lineTo(b.r.x, b.r.y); ctx.lineTo(a.r.x, a.r.y); ctx.closePath(); ctx.fill();
       }
+      seg(a.l, b.l, `rgba(${accent},${(0.28 * fade).toFixed(3)})`, 0.6);
+      seg(a.r, b.r, `rgba(${accent},${(0.28 * fade).toFixed(3)})`, 0.6);
+      seg(a.c, b.c, `rgba(${accent},${(0.85 * fade).toFixed(3)})`, 1.1);
+      if (b.k !== null && b.k % 6 === 0) seg(mid(b.c, b.l, 0.45), mid(b.c, b.r, 0.45), `rgba(${accent},${(0.55 * fade).toFixed(3)})`, 0.8);   // timing ticks
+      if ((a.c.lat > 0) !== (b.c.lat > 0)) node(b.c, a.c.lat > b.c.lat ? 'DN' : 'AN', fade);
+    }
+    // Lead: where the satellite goes next, dashed and fading forward.
+    let prevLead = samples[samples.length - 1].c;
+    ctx.setLineDash([2.5, 3]);
+    const leadStep = leadSpan / lead, leadBase = Math.floor(now / leadStep);
+    for (let s = 1; s <= lead; s++) {
+      const t = (leadBase + s) * leadStep, q = at(t, 0), f = Math.max(0, 1 - (t - now) / leadSpan);
+      if (q.z > 0 && prevLead.z > 0) seg(prevLead, q, `rgba(${accent},${(0.5 * f * Math.min(1, q.z * 3)).toFixed(3)})`, 0.9);
+      if (q.z > 0 && prevLead.z > 0 && (prevLead.lat > 0) !== (q.lat > 0)) { ctx.setLineDash([]); node(q, prevLead.lat > q.lat ? 'DN' : 'AN', f); ctx.setLineDash([2.5, 3]); }
+      prevLead = q;
+    }
+    ctx.setLineDash([]);
+    function node(q, label, alpha) {
+      if (alpha < 0.05) return;
+      ctx.strokeStyle = `rgba(${ink},${(0.75 * alpha).toFixed(3)})`; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.arc(q.x, q.y, 2.6, 0, 2 * Math.PI); ctx.stroke();
+      ctx.font = '8px "Courier New", monospace';
+      ctx.fillStyle = `rgba(${ink},${(0.8 * alpha).toFixed(3)})`;
+      ctx.fillText(label, q.x + 6, q.y + 3);
     }
 
     // Home marker.
@@ -330,37 +379,26 @@ export function initGlobe(figure) {
       ctx.fillText(label, p.x + 9, p.y - 7);
     }
 
-    // Orbit ring: solid where it is in front of or beside the globe, dashed where hidden.
-    const steps = 180, ring = [];
-    for (let s = 0; s <= steps; s++) {
-      const o = orbit(s / steps * 2 * Math.PI), q = project(o.L - theta, o.lat, ALTITUDE, theta, { ...view });
-      q.hidden = q.z < 0 && Math.hypot(q.x - view.cx, q.y - view.cy) < R;
-      ring.push(q);
-    }
-    ctx.globalAlpha = 1;
-    ctx.lineWidth = 1.1;
-    for (let s = 1; s <= steps * orbitDrawn; s++) {
-      const a = ring[s - 1], b = ring[s];
-      ctx.setLineDash(b.hidden ? [] : [5, 4]);
-      ctx.strokeStyle = b.hidden ? `rgba(${accent},.15)` : `rgba(${accent},${b.z < 0 ? .45 : .9})`;
-      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-    }
-    ctx.setLineDash([]);
-
-    // Satellite with its imaging beam down to the swath.
+    // Satellite, its imaging beam to the swath edges, and the nadir point with its push-broom
+    // detector line across the swath (the same mark as the homepage track).
     ctx.globalAlpha = live;
     const sp = project(satLon, sat.lat, ALTITUDE, theta, { ...view });
     const hidden = sp.z < 0 && Math.hypot(sp.x - view.cx, sp.y - view.cy) < R;
-    const ahead = orbit(uAt(now + 0.05)), ap = project(ahead.L - thetaAt(now + 0.05), ahead.lat, ALTITUDE, theta, { ...view });
-    const nadir = project(satLon, sat.lat, 1, theta, { ...view });
-    if (!hidden && nadir.z > 0) {
-      const dx = ap.x - sp.x, dy = ap.y - sp.y, n = Math.hypot(dx, dy) || 1, half = R * 0.045;
-      const gx = -dy / n * half, gy = dx / n * half;
-      ctx.fillStyle = `rgba(${accent},.12)`; ctx.strokeStyle = `rgba(${accent},.5)`; ctx.lineWidth = .8;
-      ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(nadir.x + gx, nadir.y + gy); ctx.lineTo(nadir.x - gx, nadir.y - gy); ctx.closePath();
-      ctx.fill(); ctx.stroke();
+    const here = samples[samples.length - 1];
+    if (!hidden && here.c.z > 0) {
+      ctx.fillStyle = `rgba(${accent},.06)`;
+      ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(here.l.x, here.l.y); ctx.lineTo(here.r.x, here.r.y); ctx.closePath(); ctx.fill();
+      seg(sp, here.l, `rgba(${accent},.45)`, 0.6);
+      seg(sp, here.r, `rgba(${accent},.45)`, 0.6);
     }
-    drawCraft(view, now, live * (hidden ? 0.25 : 1));
+    if (here.c.z > 0) {
+      seg(here.l, here.r, `rgba(${ink},.9)`, 1);
+      ctx.fillStyle = `rgb(${state.paper})`;
+      ctx.beginPath(); ctx.arc(here.c.x, here.c.y, 3.6, 0, 2 * Math.PI); ctx.fill();
+      ctx.fillStyle = `rgb(${accent})`;
+      ctx.beginPath(); ctx.arc(here.c.x, here.c.y, 2.4, 0, 2 * Math.PI); ctx.fill();
+    }
+    if (!hidden) drawCraft(view, now, live);   // behind the Earth it is simply out of sight
     ctx.globalAlpha = 1;
 
     // Cursor position on the surface.

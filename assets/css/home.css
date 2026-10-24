@@ -155,7 +155,7 @@ body {
   height:var(--p,0px);
   background:var(--accent)
 }
-/* Marker: the satellite seen from the ground, lens toward the reader, wings across the track. */
+/* The orbiting craft is drawn on a canvas over the rail (rail.js); only the readout lives here. */
 .thread-sat {
   position:absolute;
   left:var(--rail);
@@ -164,77 +164,22 @@ body {
   width:0;
   height:0
 }
-.sat-craft {
-  position:absolute;
-  left:-38px;
-  top:-14px;
-  width:76px;
-  transform:rotate(var(--tilt,0deg));
-  transition:transform .15s linear
+.rail-fx {
+  position:fixed;
+  left:0;
+  top:0;
+  z-index:4;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .5s
 }
-.craft {
-  display:block;
-  overflow:visible
-}
-.craft * {
-  vector-effect:non-scaling-stroke
-}
-.c-panel {
-  fill:color-mix(in srgb,var(--ink) 22%,var(--paper));
-  stroke:var(--ink);
-  stroke-width:.75
-}
-.c-cell {
-  fill:none;
-  stroke:color-mix(in srgb,var(--ink) 28%,transparent);
-  stroke-width:.35
-}
-.c-hinge,.c-yoke,.c-boom {
-  fill:none;
-  stroke:var(--ink);
-  stroke-width:.75;
-  stroke-linejoin:round
-}
-.c-bus,.c-shade,.c-dish {
-  fill:var(--paper);
-  stroke:var(--ink);
-  stroke-width:.75
-}
-.c-seam {
-  fill:none;
-  stroke:color-mix(in srgb,var(--ink) 55%,transparent);
-  stroke-width:.45
-}
-.c-bolt circle {
-  fill:var(--ink)
-}
-.c-tracker circle {
-  fill:color-mix(in srgb,var(--ink) 12%,var(--paper));
-  stroke:var(--ink);
-  stroke-width:.6
-}
-.c-barrel {
-  fill:color-mix(in srgb,var(--ink) 10%,var(--paper));
-  stroke:var(--ink);
-  stroke-width:.6
-}
-.c-ring {
-  fill:none;
-  stroke:color-mix(in srgb,var(--ink) 50%,transparent);
-  stroke-width:.45
-}
-.c-lens {
-  fill:#161614;
-  stroke:var(--ink);
-  stroke-width:.6
-}
-.c-glint {
-  fill:var(--accent)
+.rail-fx.on {
+  opacity:1
 }
 .sat-read {
   position:absolute;
   left:0;
-  top:20px;
+  top:30px;
   transform:translateX(-50%);
   font:9px/1 "Courier New",monospace;
   letter-spacing:.8px;
@@ -523,11 +468,6 @@ body {
   }
   .thread .section-no:after {
     left:calc(var(--rail) - 30px - 11px)
-  }
-  .sat-craft {
-    left:-26px;
-    top:-10px;
-    width:52px
   }
   .sat-read {
     display:none

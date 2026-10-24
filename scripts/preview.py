@@ -13,7 +13,12 @@ def watch():
   if new!=old:
    old=new;rebuild()
 threading.Thread(target=watch,daemon=True).start()
-server=http.server.ThreadingHTTPServer(('127.0.0.1',8000),functools.partial(http.server.SimpleHTTPRequestHandler,directory=str(ROOT)))
+class Handler(http.server.SimpleHTTPRequestHandler):
+ # Always revalidate, so an edited script or stylesheet shows up on a normal refresh.
+ def end_headers(self):
+  self.send_header('Cache-Control','no-cache')
+  super().end_headers()
+server=http.server.ThreadingHTTPServer(('127.0.0.1',8000),functools.partial(Handler,directory=str(ROOT)))
 print('Preview: http://localhost:8000/papers.html — notes are rebuilt automatically; refresh after editing.',flush=True)
 try:server.serve_forever()
 except KeyboardInterrupt:server.server_close()
