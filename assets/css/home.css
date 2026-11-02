@@ -131,3 +131,28 @@
 .home .home-links .contact-link { display:inline-flex; align-items:center; gap:7px; width:auto; min-height:36px; }
 .home .contact-link svg { width:17px; height:17px; flex:none; }
 .home .contact-link .filled { fill:currentColor; stroke:none; }
+
+/* Personal research-workbench direction: technical type, cool ink, and clear full-width records. */
+body.home { --paper:#f5f8f9; --ink:#20343d; --muted:#607680; --line:#d0dde1; --accent:#157b70; }
+.dark body.home { --paper:#152027; --ink:#e2edf0; --muted:#a0b3bb; --line:#344750; --accent:#7acdbb; }
+body.home:before { opacity:.025; }
+.home h1 { font-family:Arial,Helvetica,sans-serif; font-weight:700; font-size:clamp(44px,4.7vw,66px); letter-spacing:-.05em; }
+.home h1 span { display:inline-block; vertical-align:middle; margin-left:10px; padding:4px 9px; border:1px solid var(--line); border-radius:4px; font:12px/1.4 "Courier New",monospace; letter-spacing:.08em; }
+.home .section-kicker { font-size:10px; letter-spacing:1.5px; }
+.home .globe { padding:10px; border:1px solid var(--line); border-radius:12px; background:color-mix(in srgb,var(--accent) 3%,transparent); }
+.home .home-section,.home #education { grid-template-columns:minmax(0,1fr); gap:24px; padding:34px 0; }
+.home .section-heading { padding-left:12px; border-left:3px solid var(--accent); }
+.home h2 { font:600 24px/1.3 Arial,Helvetica,sans-serif; letter-spacing:-.025em; }
+.home .education-entry { padding:14px 0; }
+.home .education-entry+.education-entry { margin-top:10px; padding-top:24px; }
+.home .award-list { gap:0; }
+.home .award-list li { padding:16px 0 16px 18px; font-size:15px; border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent); }
+.home .award-list li:first-child { padding-top:0; }
+.home .award-list li:before { top:27px; width:5px; height:5px; border-radius:1px; }
+.home .award-list li:first-child:before { top:11px; }
+.home .award-list li:last-child { border-bottom:0; padding-bottom:0; }
+.home .home-explore { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.home .explore-panel { border-radius:10px; border-color:var(--line); padding:24px; background:color-mix(in srgb,var(--ink) 2%,transparent); }
+.home .panel-heading h3 { font:600 19px/1.4 Arial,Helvetica,sans-serif; }
+.home .panel-link { font-family:"Courier New",monospace; font-size:11px; }
+@media(max-width:760px) { .home .hero-stage { padding-top:32px; } .home h1 { font-size:46px; } .home .home-section,.home #education { padding:28px 0; gap:22px; } .home h2 { font-size:22px; } .home .home-explore { grid-template-columns:minmax(0,1fr); } .home .globe { padding:4px; } }
