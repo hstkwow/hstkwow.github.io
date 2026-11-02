@@ -111,3 +111,18 @@
  color:var(--accent); background-size:100% 1px; border:0; transform:none;
 }
 @media(prefers-reduced-motion:reduce) { .home .home-links a,.home .home-links .contact-icon { transition:none; } }
+
+/* Education starts at the section's left edge rather than in a distant second column. */
+.home #education { grid-template-columns:minmax(0,1fr); gap:26px; }
+.home #education .education-list { width:100%; }
+.home #education .education-entry { grid-template-columns:60px minmax(0,1fr); gap:20px; }
+.home #education .school-mark,.home #education .school-mark img { width:60px; height:60px; }
+.home #education .school-mark-uem img { width:auto; height:60px; }
+.home #education .entry-heading { align-items:baseline; }
+@media(max-width:760px) {
+ .home #education { gap:22px; }
+ .home #education .education-entry { grid-template-columns:46px minmax(0,1fr); gap:14px; }
+ .home #education .school-mark,.home #education .school-mark img { width:46px; height:46px; }
+ .home #education .school-mark-uem img { width:auto; height:46px; }
+ .home #education .entry-heading { display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
+}
