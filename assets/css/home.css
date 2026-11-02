@@ -57,3 +57,21 @@
 
 .home .advisor-link { color:var(--accent); text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:4px; }
 .home .advisor-link:hover { color:var(--ink); }
+
+/* Quiet link affordance: the underline grows from left to right, also on keyboard focus. */
+.home .home-links { align-items:center; gap:18px; }
+.home .home-links a:not(.contact-icon),.home .advisor-link,.home .panel-link {
+ text-decoration:none; border-bottom:0; padding-bottom:3px;
+ background-image:linear-gradient(var(--accent),var(--accent)); background-repeat:no-repeat;
+ background-position:left bottom; background-size:0% 1px;
+ -webkit-box-decoration-break:clone; box-decoration-break:clone;
+ transition:background-size .45s cubic-bezier(.22,1,.36,1),color .25s ease;
+}
+.home .home-links a:not(.contact-icon):is(:hover,:focus-visible),.home .advisor-link:is(:hover,:focus-visible),.home .explore-panel:is(:hover,:focus-visible) .panel-link { background-size:100% 1px; color:var(--accent); }
+.home .home-links .contact-icon { display:inline-flex; justify-content:center; align-items:center; width:36px; height:36px; padding:0; border:1px solid transparent; border-radius:6px; background:none; color:var(--muted); transition:color .2s ease,border-color .2s ease,transform .2s ease; }
+.home .contact-icon svg { width:19px; height:19px; }
+.home .home-links .contact-icon:is(:hover,:focus-visible) { color:var(--accent); border-color:var(--line); transform:translateY(-2px); }
+@media(prefers-reduced-motion:reduce) {
+ .home .home-links a,.home .home-links .contact-icon,.home .advisor-link,.home .panel-link { transition:none; }
+ .home .home-links .contact-icon:is(:hover,:focus-visible) { transform:none; }
+}
