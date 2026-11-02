@@ -97,3 +97,17 @@
  .entry-heading { gap:6px 16px; }
  .home h2 { font-size:25px; }
 }
+
+/* Contact links share the same hover and keyboard-focus feedback. */
+.home .home-links a,.home .home-links .contact-icon {
+ display:inline-flex; align-items:center; justify-content:center; min-height:36px;
+ padding:0; border:0; border-radius:0; color:var(--muted); transform:none;
+ text-decoration:none; background-image:linear-gradient(var(--accent),var(--accent));
+ background-repeat:no-repeat; background-position:left bottom; background-size:0% 1px;
+ transition:background-size .45s cubic-bezier(.22,1,.36,1),color .25s ease;
+}
+.home .home-links .contact-icon { width:24px; }
+.home .home-links a:is(:hover,:focus-visible),.home .home-links .contact-icon:is(:hover,:focus-visible) {
+ color:var(--accent); background-size:100% 1px; border:0; transform:none;
+}
+@media(prefers-reduced-motion:reduce) { .home .home-links a,.home .home-links .contact-icon { transition:none; } }
