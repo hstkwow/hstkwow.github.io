@@ -409,7 +409,7 @@ export function initGlobe(figure) {
     }
 
     // Caption readout, a few times a second.
-    if (state.frame++ % 6 === 0) {
+    if (state.frame++ % 6 === 0 && readout) {
       const wrap = v => ((v / RAD + 540) % 360) - 180;
       let text = `SSP ${fmt(sat.lat / RAD, 'N', 'S')} ${fmt(wrap(satLon), 'E', 'W')}`;
       if (state.hover?.lat != null) text = `CURSOR ${fmt(state.hover.lat, 'N', 'S')} ${fmt(state.hover.lon, 'E', 'W')}`;
