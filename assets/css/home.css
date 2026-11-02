@@ -126,3 +126,8 @@
  .home #education .school-mark-uem img { width:auto; height:46px; }
  .home #education .entry-heading { display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
 }
+
+/* Social contacts use an icon and a readable label as one link. */
+.home .home-links .contact-link { display:inline-flex; align-items:center; gap:7px; width:auto; min-height:36px; }
+.home .contact-link svg { width:17px; height:17px; flex:none; }
+.home .contact-link .filled { fill:currentColor; stroke:none; }
