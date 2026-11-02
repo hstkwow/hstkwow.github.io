@@ -33,7 +33,7 @@
 .entry-date { color:var(--muted); font:11px/1.6 "Courier New",monospace; white-space:nowrap; }
 .education-entry p { font-size:14px; margin:7px 0 0; }
 .education-entry .entry-detail { color:var(--muted); font-size:13px; }
-.award-list { list-style:none; padding:0; margin:0; display:grid; gap:20px; }
+.award-list { list-style:none; padding:0; margin:0; display:grid; gap:14px; }
 .award-list li { margin:0; padding:0 0 0 16px; position:relative; }
 .award-list li:before { content:""; position:absolute; left:0; top:12px; width:4px; height:4px; border-radius:50%; background:var(--accent); }
 .award-list h3 { font-size:17px; }
@@ -50,3 +50,7 @@
 @media(max-width:1000px) { .hero-stage { gap:24px; grid-template-columns:minmax(0,1.2fr) minmax(260px,1fr); } .home .home-section { grid-template-columns:170px minmax(0,1fr); gap:28px; } .home-explore { grid-template-columns:minmax(0,1fr); } }
 @media(max-width:760px) { .home-content { padding:0; } .hero-stage { grid-template-columns:minmax(0,1fr); padding:34px 0 28px; gap:24px; } .home h1 { font-size:48px; } .home h1 span { font-size:19px; } .home-role { font-size:14px; margin-bottom:20px; } .home .intro { font-size:15px; } .globe-stage { height:300px; } .globe { width:100%; max-width:480px; justify-self:center; } .home .home-section { grid-template-columns:minmax(0,1fr); gap:24px; padding:30px 0; } .home h2 { font-size:26px; } .home h3 { font-size:17px; } .home .section-kicker { font-size:10px; } .globe .caption { flex-wrap:wrap; } .home-explore { gap:14px; } }
 @media(prefers-reduced-motion:reduce) { .explore-panel { transition:none; } }
+
+.award-list li { font-size:16px; line-height:1.7; }
+.award-count { color:var(--accent); font-size:14px; margin-left:4px; white-space:nowrap; }
+.award-note { color:var(--muted); font-size:14px; }
