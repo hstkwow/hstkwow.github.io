@@ -4,7 +4,7 @@
 .hero-stage { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(300px,1fr); align-items:center; gap:clamp(24px,5vw,88px); padding:52px 0 48px; }
 .home header { display:block; padding:0; border:0; min-width:0; }
 .home .section-kicker { margin:0 0 16px; color:var(--accent); font:11px/1.5 "Courier New",monospace; letter-spacing:1.6px; }
-.home h1 { margin:0 0 12px; font:700 clamp(44px,5.4vw,76px)/1.1 Georgia,"Times New Roman",serif; letter-spacing:-.04em; }
+.home h1 { margin:0 0 12px; font:700 clamp(44px,4.5vw,62px)/1.1 Georgia,"Times New Roman",serif; letter-spacing:-.04em; }
 .home h1 span { display:inline; margin:0; font:400 21px/1.5 Georgia,serif; letter-spacing:0; color:var(--muted); white-space:nowrap; }
 .home-role { color:var(--muted); font-size:16px; margin:0 0 26px; }
 .home .intro { max-width:700px; margin:0 0 16px; font:16px/1.85 Arial,Helvetica,sans-serif; }
@@ -30,7 +30,7 @@
 .section-content { min-width:0; }
 .education-entry+.education-entry { margin-top:25px; padding-top:25px; border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent); }
 .entry-heading { display:flex; justify-content:space-between; align-items:baseline; gap:12px 24px; flex-wrap:wrap; }
-.entry-date { color:var(--muted); font:11px/1.6 "Courier New",monospace; white-space:nowrap; }
+.entry-date { color:var(--muted); font:12px/1.6 Arial,Helvetica,sans-serif; white-space:nowrap; }
 .education-entry p { font-size:14px; margin:7px 0 0; }
 .education-entry .entry-detail { color:var(--muted); font-size:13px; }
 .award-list { list-style:none; padding:0; margin:0; display:grid; gap:14px; }
@@ -74,4 +74,26 @@
 @media(prefers-reduced-motion:reduce) {
  .home .home-links a,.home .home-links .contact-icon,.home .advisor-link,.home .panel-link { transition:none; }
  .home .home-links .contact-icon:is(:hover,:focus-visible) { transform:none; }
+}
+
+/* A restrained hierarchy, with native transparent school marks. */
+.home .home-section { padding:36px 0; }
+.home h2 { font-size:clamp(25px,2.1vw,29px); font-weight:500; }
+.home h3 { font-size:17px; font-weight:500; }
+.home .education-entry { display:grid; grid-template-columns:64px minmax(0,1fr); gap:20px; align-items:center; }
+.education-copy { min-width:0; }
+.school-mark { width:64px; height:64px; overflow:hidden; background:transparent; flex-shrink:0; }
+.school-mark img { display:block; width:64px; height:64px; object-fit:contain; background:transparent; }
+.school-mark-uem img { width:auto; max-width:none; height:64px; object-fit:initial; }
+.dark .school-mark img { filter:brightness(1.9) saturate(.8); }
+.education-entry .entry-date { font-size:12px; letter-spacing:.02em; }
+.home .entry-detail { font-size:13px; line-height:1.7; }
+@media(max-width:760px) {
+ .home .home-section { padding:28px 0; }
+ .home .education-entry { grid-template-columns:48px minmax(0,1fr); gap:14px; align-items:start; }
+ .school-mark { width:48px; height:48px; margin-top:3px; }
+ .school-mark img { width:48px; height:48px; }
+ .school-mark-uem img { width:auto; height:48px; }
+ .entry-heading { gap:6px 16px; }
+ .home h2 { font-size:25px; }
 }
