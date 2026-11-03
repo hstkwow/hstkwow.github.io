@@ -1,27 +1,17 @@
 # HSTK · Personal Website
 
-My homepage, projects, and reading notes on computer vision and pansharpening.
+My personal corner of the web for projects, research notes, and things I’m learning.
 
-[Website](https://hstkwow.top/) · [Projects](https://hstkwow.top/projects.html) · [Reading](https://hstkwow.top/papers.html)
+[Visit the website](https://hstkwow.top/) · [Projects](https://hstkwow.top/projects.html) · [Reading](https://hstkwow.top/papers.html)
 
-## Preview locally
+## About
 
-Built with HTML, CSS, JavaScript, and Python. No Node.js build required.
+I’m Sun Tao, a graduate student at Tiangong University interested in computer vision. This site brings together my background, selected projects, and paper notes on pansharpening and related methods.
 
-```sh
-python3 -m venv .venv
-.venv/bin/python -m pip install -r config/requirements.txt
-.venv/bin/python scripts/preview.py
-```
+## The site
 
-Open [localhost:8000](http://localhost:8000/).
+- An editorial layout with light and dark themes and an interactive Earth.
+- Selected GitHub projects and recently updated reading notes.
+- Markdown notes with equations, figures, and reading timelines.
 
-## Update content
-
-- **Homepage:** `index.html`
-- **Projects:** `assets/data/projects.js`
-- **Notes:** `notes/<paper>/index.md`, with screenshots in `images/`
-
-Push to `main` to build and deploy with GitHub Actions. Homepage previews refresh during deployment: two top-starred pinned projects and two recently updated notes.
-
-See the [maintenance guide](config/READING.md) for note metadata, images, and publishing details.
+Built with **HTML, CSS, JavaScript, and Python**, and published through **GitHub Pages**.
