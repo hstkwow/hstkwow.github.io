@@ -208,3 +208,42 @@
 .home .school-link { color:inherit; text-decoration:none; padding-bottom:3px; background-image:linear-gradient(var(--accent),var(--accent)); background-repeat:no-repeat; background-position:left bottom; background-size:0% 1px; -webkit-box-decoration-break:clone; box-decoration-break:clone; transition:background-size .45s cubic-bezier(.22,1,.36,1),color .25s ease; }
 .home .school-link:is(:hover,:focus-visible) { color:var(--accent); background-size:100% 1px; }
 @media(prefers-reduced-motion:reduce) { .home .school-link { transition:none; } }
+
+/* Home typography: editorial display paired with a quieter humanist text face. */
+.home {
+ --home-text:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+ --home-display:"Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,Georgia,serif;
+ font-family:var(--home-text); font-size:15px; line-height:1.75;
+ text-rendering:optimizeLegibility; -webkit-font-smoothing:antialiased;
+}
+.home h1 { font-family:var(--home-display); font-size:clamp(50px,5vw,72px); font-weight:600; line-height:1.06; letter-spacing:-.045em; margin-bottom:18px; }
+.home h1 span { font-family:var(--home-display); font-size:clamp(20px,2vw,26px); font-style:italic; font-weight:400; letter-spacing:-.02em; }
+.home .home-role { font:500 15px/1.6 var(--home-text); letter-spacing:.005em; margin-bottom:26px; }
+.home .intro { font:400 clamp(16px,1.3vw,18px)/1.85 var(--home-text); max-width:62ch; letter-spacing:-.012em; }
+.home .intro strong { font-weight:600; }
+.home .about-background { font:400 14px/1.85 var(--home-text); max-width:68ch; letter-spacing:0; }
+.home .home-links { font:500 13px/1.6 var(--home-text); }
+.home h2 { font:500 clamp(28px,2.7vw,36px)/1.2 var(--home-display); text-transform:none; letter-spacing:-.025em; }
+.home .section-kicker,.home .section-context { font:500 10px/1.5 var(--home-text); letter-spacing:.14em; }
+.home .education-entry h3 { font:600 18px/1.5 var(--home-text); letter-spacing:-.025em; }
+.home .education-entry p { font:400 14px/1.7 var(--home-text); }
+.home .education-entry .entry-detail { font-size:13px; }
+.home .education-entry .entry-date { font:400 12px/1.6 var(--home-text); letter-spacing:.015em; font-variant-numeric:tabular-nums; }
+.home .award-list li { font:450 15px/1.8 var(--home-text); letter-spacing:-.01em; }
+.home .award-count,.home .award-note { font-family:var(--home-text); font-size:13px; }
+.home .home-preview h3 { font:600 clamp(18px,1.65vw,22px)/1.45 var(--home-text); letter-spacing:-.03em; }
+.home .home-preview p { font:400 14px/1.85 var(--home-text); letter-spacing:0; }
+.home .preview-meta { font:400 11px/1.65 var(--home-text); }
+.home .section-more { font:500 12px/1.6 var(--home-text); }
+@media(max-width:760px) {
+ .home h1 { font-size:clamp(46px,12vw,58px); }
+ .home h1 span { font-size:21px; }
+ .home .home-role { font-size:14px; }
+ .home .intro { font-size:16px; line-height:1.8; }
+ .home h2 { font-size:29px; }
+ .home .education-entry h3 { font-size:16px; }
+ .home .education-entry p { font-size:13px; }
+ .home .education-entry .entry-detail { font-size:12px; }
+ .home .home-preview h3 { font-size:19px; }
+ .home .home-preview p { font-size:13px; }
+}
