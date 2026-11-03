@@ -203,3 +203,8 @@
  .home #home-reading .home-preview p { -webkit-line-clamp:3; }
 }
 @media(prefers-reduced-motion:reduce) { .home .section-more,.home-preview h3 a { transition:none; } }
+
+/* School names share the site's underline interaction. */
+.home .school-link { color:inherit; text-decoration:none; padding-bottom:3px; background-image:linear-gradient(var(--accent),var(--accent)); background-repeat:no-repeat; background-position:left bottom; background-size:0% 1px; -webkit-box-decoration-break:clone; box-decoration-break:clone; transition:background-size .45s cubic-bezier(.22,1,.36,1),color .25s ease; }
+.home .school-link:is(:hover,:focus-visible) { color:var(--accent); background-size:100% 1px; }
+@media(prefers-reduced-motion:reduce) { .home .school-link { transition:none; } }
