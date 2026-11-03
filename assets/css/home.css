@@ -156,20 +156,23 @@
  .home .explore-panel+.explore-panel { border-top:1px solid var(--line); padding-top:24px; }
 }
 
-/* Separate editorial columns with actual project and note previews. */
+/* Homepage entries are open editorial rows, isolated from legacy article cards. */
 .home .section-heading { display:flex; justify-content:space-between; align-items:baseline; gap:16px; }
 .home .section-more { flex:none; font-size:12px; color:var(--muted); text-decoration:none; }
 .home .section-more:hover { color:var(--accent); }
-.home-previews { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:28px; }
-.home-preview { min-width:0; }
-.home-preview+ .home-preview { border-left:1px solid var(--line); padding-left:28px; }
-.home .home-preview h3 { font:700 23px/1.3 Georgia,"Times New Roman",serif; }
+.home-previews { display:block; }
+.home .home-preview { position:static; display:grid; grid-template-columns:minmax(180px,.65fr) minmax(0,1.35fr); gap:8px 40px; margin:0; padding:4px 0 22px; border:0; background:none; box-shadow:none; border-radius:0; counter-increment:none; }
+.home .home-preview::before { content:none; }
+.home .home-preview+.home-preview { margin:0; padding:22px 0 4px; border:0; border-top:1px solid var(--line); }
+.home .home-preview h3 { grid-column:1; grid-row:1 / span 2; font:700 23px/1.4 Georgia,"Times New Roman",serif; }
 .home-preview h3 a { text-decoration:none; overflow-wrap:anywhere; }
 .home-preview h3 a:hover { color:var(--accent); }
-.home-preview p { font-size:14px; line-height:1.8; color:var(--muted); margin:12px 0; }
-.preview-meta { display:flex; flex-wrap:wrap; align-items:center; gap:6px 16px; color:var(--muted); font-size:12px; }
+.home .home-preview p { grid-column:2; font-size:14px; line-height:1.8; color:var(--muted); margin:0; max-width:85ch; }
+.preview-meta { grid-column:2; display:flex; flex-wrap:wrap; align-items:center; gap:6px 16px; color:var(--muted); font-size:12px; }
+.home .preview-meta time { font:inherit; }
 .preview-status { color:var(--muted); font-size:14px; }
 @media(max-width:760px) {
- .home-previews { grid-template-columns:minmax(0,1fr); gap:22px; }
- .home-preview+ .home-preview { padding:22px 0 0; border-left:0; border-top:1px solid var(--line); }
+ .home .home-preview { grid-template-columns:minmax(0,1fr); gap:10px; }
+ .home .home-preview h3 { grid-column:1; grid-row:auto; font-size:21px; }
+ .home .home-preview p,.home .preview-meta { grid-column:1; }
 }
