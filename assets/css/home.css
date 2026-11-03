@@ -176,3 +176,30 @@
  .home .home-preview h3 { grid-column:1; grid-row:auto; font-size:21px; }
  .home .home-preview p,.home .preview-meta { grid-column:1; }
 }
+
+/* Fine hierarchy and quiet interaction without enclosing the content. */
+.home .section-heading { align-items:flex-end; }
+.home .section-context { margin:0 0 9px; font:10px/1.5 "Courier New",monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+.home .section-more { padding:4px 0; margin-bottom:3px; }
+.home .section-more,.home-preview h3 a { background-image:linear-gradient(var(--accent),var(--accent)); background-repeat:no-repeat; background-position:left bottom; background-size:0 1px; transition:color .2s ease,background-size .3s ease; }
+.home .section-more:is(:hover,:focus-visible),.home-preview h3 a:is(:hover,:focus-visible) { color:var(--accent); background-size:100% 1px; }
+.home .home-preview { padding:8px 0 27px; column-gap:clamp(24px,4vw,64px); row-gap:13px; align-content:start; }
+.home .home-preview+.home-preview { padding:27px 0 8px; border-top-color:color-mix(in srgb,var(--line) 65%,transparent); }
+.home .home-preview h3 { font-size:clamp(21px,1.8vw,26px); letter-spacing:-.025em; line-height:1.35; }
+.home .home-preview p { max-width:68ch; line-height:1.85; text-wrap:pretty; }
+.home #home-reading .home-preview p { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
+.home .preview-meta { gap:8px 0; font-size:11px; line-height:1.6; }
+.home .preview-meta>span+span { margin-left:14px; padding-left:14px; border-left:1px solid var(--line); }
+.preview-language { display:inline-flex; align-items:center; gap:7px; }
+.language-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); opacity:.8; }
+.home .preview-topic { color:var(--accent); }
+.home .preview-meta time { font-variant-numeric:tabular-nums; }
+.home a:focus-visible { outline:1px solid var(--accent); outline-offset:5px; }
+@media(max-width:760px) {
+ .home .section-context { font-size:9px; letter-spacing:.09em; margin-bottom:7px; }
+ .home .home-preview { row-gap:10px; padding:4px 0 22px; }
+ .home .home-preview+.home-preview { padding:22px 0 4px; }
+ .home .home-preview p { font-size:13px; }
+ .home #home-reading .home-preview p { -webkit-line-clamp:3; }
+}
+@media(prefers-reduced-motion:reduce) { .home .section-more,.home-preview h3 a { transition:none; } }
