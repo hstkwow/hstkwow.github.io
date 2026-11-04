@@ -229,7 +229,7 @@ mjx-container[display="true"] {
 }
 .note-cards {
   display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-columns:minmax(0,1fr);
   border-top:1px solid var(--line);
   border-left:1px solid var(--line)
 }
@@ -241,7 +241,7 @@ mjx-container[display="true"] {
   border-right:1px solid var(--line);
   border-bottom:1px solid var(--line);
   text-decoration:none;
-  transition:background .15s
+  transition:none
 }
 .note-card:hover {
   background:color-mix(in srgb,var(--accent) 5%,transparent);
@@ -476,29 +476,6 @@ mjx-container[display="true"] {
 .acq-rows a.linked .acq-track {
   background-color:color-mix(in srgb,var(--accent) 7%,transparent)
 }
-/* Card hover: a sensor line sweeps across the entry. */
-.note-card {
-  position:relative;
-  overflow:hidden
-}
-.note-card:after {
-  content:"";
-  position:absolute;
-  top:0;
-  bottom:0;
-  left:0;
-  width:1px;
-  background:var(--accent);
-  box-shadow:0 0 14px 2px color-mix(in srgb,var(--accent) 40%,transparent);
-  opacity:0;
-  pointer-events:none
-}
-.note-card:hover:after,.note-card.linked:after {
-  animation:sweep .65s cubic-bezier(.3,.6,.2,1) forwards
-}
-.note-card.linked {
-  background:color-mix(in srgb,var(--accent) 5%,transparent)
-}
 @keyframes sweep {
   0% {
     left:0;
@@ -625,17 +602,17 @@ mjx-container[display="true"] {
   background:none
 }
 .note-card:hover h3,.note-card.linked h3 {
-  color:var(--accent)
+  color:inherit
 }
 .note-card h3 {
   margin:10px 0 6px;
-  transition:color .2s
+  transition:none
 }
 .note-card h3 span {
-  transition:transform .25s ease
+  transition:none
 }
 .note-card:hover h3 span {
-  transform:translate(3px,-3px)
+  transform:none
 }
 .card-meta {
   padding-top:12px
