@@ -5,7 +5,9 @@
   --ink:#25241f;
   --muted:#716d62;
   --line:#b2ac9e;
-  --accent:#ad3828
+  --accent:#ad3828;
+  --ambient-warm:rgba(181,134,86,.12);
+  --ambient-cool:rgba(108,133,137,.075)
 }
 * {
   box-sizing:border-box
@@ -16,19 +18,15 @@ html {
 }
 body {
   margin:0;
-  background:var(--paper);
+  background-color:var(--paper);
+  background-image:radial-gradient(ellipse 75% 640px at 6% 0%,var(--ambient-warm),transparent 80%),radial-gradient(ellipse 60% 760px at 100% 130px,var(--ambient-cool),transparent 85%);
+  background-repeat:no-repeat;
   color:var(--ink);
   font-family:Arial,Helvetica,sans-serif;
   line-height:1.85
 }
-body:before {
-  content:"";
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  opacity:.15;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23887f70' filter='url(%23n)' opacity='.25' d='M0 0h180v180H0z'/%3E%3C/svg%3E")
-}
+/* Ambient color is painted behind the content, without a grain overlay. */
+body:before { content:none; }
 main {
   max-width:none;
   margin:auto;
@@ -254,11 +252,13 @@ a:focus-visible,button:focus-visible {
 }
 .dark {
   color-scheme:dark;
-  --paper:#22221e;
+  --paper:#1d1e1c;
   --ink:#e7e2d6;
   --muted:#b2ac9e;
   --line:#615f54;
-  --accent:#ee9076
+  --accent:#ee9076;
+  --ambient-warm:rgba(176,126,87,.09);
+  --ambient-cool:rgba(98,126,128,.065)
 }
 @media(max-width:760px) {
   main {
