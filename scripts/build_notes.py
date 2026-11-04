@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compile notes into a small manifest plus per-note JSON loaded on demand; no CDN needed at runtime."""
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import urlsplit, unquote, quote
 from html.parser import HTMLParser
 import argparse, hashlib, html, json, re, shutil
@@ -83,19 +83,28 @@ def build():
             if not match:raise ValueError(f'{path}: unclosed YAML front matter')
             meta=yaml.safe_load(match[1]) or {};body=source[match.end():]
             if not isinstance(meta,dict):raise ValueError(f'{path}: YAML must be a mapping')
-        kind='concept' if path.parent.name=='SmallNote' else 'paper'
+        kind=str(meta.get('type') or ('concept' if path.parent.name=='SmallNote' else 'paper'))
+        if kind not in ('paper','blog','concept'):raise ValueError(f'{path}: type must be paper, blog, or concept')
+        published=None
+        if meta.get('date'):
+            try:
+                published=datetime.fromisoformat(str(meta['date']))
+                if published.tzinfo is None:published=published.replace(tzinfo=timezone.utc)
+            except ValueError:raise ValueError(f'{path}: date must be an ISO date, e.g. 2026-11-04')
         title=str(meta.get('title') or (re.search(r'^# (.+)$',body,re.M).group(1) if re.search(r'^# (.+)$',body,re.M) else (path.stem if kind=='concept' else path.parent.name)))
-        if kind=='paper' and not meta.get('title'):raise ValueError(f'{path}: title is required')
+        if kind in ('paper','blog') and not meta.get('title'):raise ValueError(f'{path}: title is required')
         start=timestamp(meta.get('started_at'),'started_at',path);end=timestamp(meta.get('finished_at'),'finished_at',path)
         if end and not start:raise ValueError(f'{path}: finished_at requires started_at')
         if start and end and end<start:raise ValueError(f'{path}: finished_at precedes started_at')
         tags=meta.get('tags',[])
         if isinstance(tags,str):tags=[tags]
         if not isinstance(tags,list):raise ValueError(f'{path}: tags must be a list')
-        ident='concepts/'+path.stem if kind=='concept' else path.parent.name
+        if not tags:tags=[str(meta.get('topic') or ('Concepts' if kind=='concept' else 'Blog' if kind=='blog' else 'Pansharpening'))]
+        ident='concepts/'+path.stem if path.parent.name=='SmallNote' else path.parent.name
+        if any(n['id']==ident for n in catalog.values()):raise ValueError(f'{path}: duplicate note id: {ident}')
         paper_url=str(meta.get('paper_url') or '')
         if paper_url and urlsplit(paper_url).scheme not in ('http','https'):raise ValueError(f'{path}: invalid paper_url')
-        catalog[path.resolve()]=dict(id=ident,kind=kind,title=title,topic=str(meta.get('topic') or ('Concepts' if kind=='concept' else 'Pansharpening')),tags=[str(t) for t in tags],started_at=start.isoformat() if start else None,finished_at=end.isoformat() if end else None,span_seconds=(end-start).total_seconds() if start and end else None,status='completed' if end else 'reading',paper_url=paper_url,publication_status=str(meta.get('publication_status') or ''),summary=str(meta.get('summary') or ''),source=path.relative_to(ROOT).as_posix(),_body=body)
+        catalog[path.resolve()]=dict(id=ident,kind=kind,date=published.isoformat() if published else None,title=title,topic=str(meta.get('topic') or ('Concepts' if kind=='concept' else 'Blog' if kind=='blog' else 'Pansharpening')),tags=[str(t) for t in tags],started_at=start.isoformat() if start else None,finished_at=end.isoformat() if end else None,span_seconds=(end-start).total_seconds() if start and end else None,status='completed' if end else 'reading',paper_url=paper_url,publication_status=str(meta.get('publication_status') or ''),summary=str(meta.get('summary') or ''),source=path.relative_to(ROOT).as_posix(),_body=body)
     rewrites={};produced=set()
     for path,item in catalog.items():
         body=item.pop('_body');formulas=[]
@@ -119,13 +128,13 @@ def build():
         text=re.sub('<[^>]+>',' ',rendered);cjk=len(re.findall(r'[\u3400-\u9fff]',text));words=len(re.findall(r'[A-Za-z0-9]+',text))
         item['minutes']=max(1,round(cjk/400+words/220))
         item['search_text']=re.sub('<[^>]+>',' ',rendered)
-        item['status']=item['status'] if item['kind']=='paper' else 'reference'
+        item['status']=item['status'] if item['kind']=='paper' else ('published' if item['kind']=='blog' else 'reference')
     for path,rewrite in rewrites.items():
         for target,anchor in rewrite.links:
             if anchor and anchor not in rewrites[target].ids:raise ValueError(f'{path}: missing anchor {anchor} in {target}')
-    items=sorted(catalog.values(),key=lambda p:(p['kind']!='paper',-(datetime.fromisoformat(p['finished_at'] or p['started_at']).timestamp() if p['finished_at'] or p['started_at'] else 0),p['id']))
+    items=sorted(catalog.values(),key=lambda p:(-(datetime.fromisoformat(p['date'] or p['finished_at'] or p['started_at']).timestamp() if p['date'] or p['finished_at'] or p['started_at'] else 0),p['id']))
     write_outputs(items,produced)
-    print(f'Built {sum(p["kind"]=="paper" for p in items)} papers and {sum(p["kind"]=="concept" for p in items)} concept documents; links, timestamps and anchors validated.')
+    print(f'Built {sum(p["kind"]=="paper" for p in items)} papers, {sum(p["kind"]=="blog" for p in items)} blog posts and {sum(p["kind"]=="concept" for p in items)} concept documents; links, timestamps and anchors validated.')
     return items
 
 def write_outputs(items,produced):

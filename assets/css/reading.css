@@ -672,3 +672,7 @@ mjx-container[display="true"] {
 .motion .overview-heading.arrive h1 {
   animation:wipe 1s cubic-bezier(.7,0,.2,1) .1s both
 }
+
+/* Types and topic tags share the compact library controls. */
+#tag-filter { display:block; width:100%; max-width:100%; margin:0 0 20px; padding:9px 10px; border:1px solid var(--line); border-radius:0; color:var(--ink); background:var(--paper); font:inherit; font-size:13px; }
+#tag-filter:focus-visible { outline:1px solid var(--accent); outline-offset:3px; }

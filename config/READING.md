@@ -49,3 +49,11 @@ For a one-off rebuild:
 The supplied `.github/workflows/pages.yml` builds notes and publishes the site on each push to `main`. Before relying on automatic publication, set the repository's **Settings → Pages → Build and deployment → Source** to **GitHub Actions**. This change has not been made automatically.
 
 Once enabled, adding a note requires only the Markdown, its images, and a normal commit/push. The workflow rebuilds the index, so you do not need to update a list or commit generated files for online publication. If a build fails, the existing deployment stays live; inspect the Actions log. Source files and imported screenshots are public when the repository and site are public.
+
+## Blog posts and tags
+
+The Blog collection supports three types: `paper`, `blog`, and `concept`. Existing notes keep their original type automatically. The collection opens with all posts and can be filtered by type and tag.
+
+For a blog post, create `notes/<slug>/index.md` from `templates/blog.md`. Set `type: blog`, `date: "2026-11-04"`, and `tags: [Python, Tools]`. Paper notes can explicitly set `type: paper`; standalone notes can set `type: concept`. Tags appear on every entry that defines them and can be selected in the sidebar. Posts do not need reading start/finish timestamps. Images stay in the post's `images/` folder.
+
+Homepage previews include both papers and blog posts, ordered by the latest Git commit to each source file.

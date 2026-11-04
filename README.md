@@ -6,12 +6,12 @@ My personal corner of the web for projects, research notes, and things I’m lea
 
 ## About
 
-I’m Sun Tao, a graduate student at Tiangong University interested in computer vision. This site brings together my background, selected projects, and paper notes on pansharpening and related methods.
+I’m Sun Tao, a graduate student at Tiangong University interested in computer vision. This site brings together my background, selected projects, and research notes, technical posts, and ideas.
 
 ## The site
 
 - An editorial layout with light and dark themes and an interactive Earth.
 - Selected GitHub projects and recently updated reading notes.
-- Markdown notes with equations, figures, and reading timelines.
+- Markdown posts organized by type and tags, with equations and figures.
 
 Built with **HTML, CSS, JavaScript, and Python**, and published through **GitHub Pages**.

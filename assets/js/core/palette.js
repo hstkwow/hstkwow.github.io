@@ -22,7 +22,7 @@ async function collect() {
   ]);
   items = [
     ...PAGES,
-    ...notes.map(n => ({ group: n.kind === 'paper' ? 'Paper notes' : 'Concepts', id: n.id, title: n.title, hint: n.summary || `${n.topic} · ${n.kind === 'paper' ? (n.finished_at ? 'completed' : 'in progress') : 'reference'}`, keywords: [n.topic, ...n.tags], href: 'papers.html?note=' + encodeURIComponent(n.id) })),
+    ...notes.map(n => ({ group: n.kind === 'paper' ? 'Paper notes' : n.kind === 'blog' ? 'Blog posts' : 'Concepts', id: n.id, title: n.title, hint: n.summary || `${n.topic} · ${n.kind === 'paper' ? (n.finished_at ? 'completed' : 'in progress') : 'reference'}`, keywords: [n.topic, ...n.tags], href: 'papers.html?note=' + encodeURIComponent(n.id) })),
     ...projects.map(p => ({ group: 'Projects', title: p.title, hint: p.summary, keywords: [p.topic, ...p.tags], href: 'projects.html?project=' + encodeURIComponent(p.id) })),
   ];
 }

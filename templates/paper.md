@@ -1,5 +1,6 @@
 ---
 title: "Paper title"
+type: paper
 topic: "Pansharpening"
 started_at: "2026-10-17T14:00:00+08:00"
 finished_at: null

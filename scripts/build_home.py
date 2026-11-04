@@ -41,6 +41,7 @@ def reading():
         stamp = subprocess.run(['git','log','-1','--format=%cI','--',str(path.relative_to(ROOT))], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
         if not stamp:
             stamp = datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat()
+        kind = str(meta.get('type') or 'paper')
         summary = meta.get('summary')
         if not summary:
             body = re.sub(r'```[\s\S]*?```|!\[[^\]]*\]\([^)]*\)|\$\$[\s\S]*?\$\$', '', body)
@@ -52,7 +53,7 @@ def reading():
         summary = str(summary)
         if len(summary)>160:
             summary = summary[:157].rstrip()+'…'
-        notes.append(dict(id=path.parent.name,title=str(meta.get('title') or path.parent.name),topic=str(meta.get('topic') or 'Pansharpening'),summary=summary,updated_at=stamp))
+        notes.append(dict(id=path.parent.name,title=str(meta.get('title') or path.parent.name),kind=kind,topic=str(meta.get('topic') or ('Blog' if kind=='blog' else 'Pansharpening')),summary=summary,updated_at=stamp))
     return sorted(notes, key=lambda n: (-datetime.fromisoformat(n['updated_at']).timestamp(),n['id']))[:2]
 
 if __name__ == '__main__':

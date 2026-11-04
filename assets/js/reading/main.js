@@ -6,7 +6,7 @@ import { typeset, clearMath, prefetchMath } from './math.js';
 import { openImage } from './lightbox.js';
 import { scramble } from '../core/fx.js';
 
-let notes = [], firstView = true, fullText = null, category = 'paper', selected = null, observer = null, revision = 0;
+let notes = [], firstView = true, fullText = null, category = 'all', selected = null, observer = null, revision = 0;
 const dateFormat = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
 const date = value => value ? dateFormat.format(new Date(value)) : 'Not recorded';
 function span(seconds) {
@@ -15,23 +15,31 @@ function span(seconds) {
   const days = Math.floor(minutes / 1440), hours = Math.floor(minutes % 1440 / 60), mins = minutes % 60;
   return [days ? days + 'd' : '', hours ? hours + 'h' : '', mins ? mins + 'm' : ''].filter(Boolean).join(' ');
 }
+const labels = { all: 'All posts', paper: 'Paper notes', blog: 'Blog posts', concept: 'Concepts' };
+let activeTag = '';
 const tags = note => note.tags.map(t => '<span>' + escapeHTML(t) + '</span>').join('');
 
 function candidates() {
   const query = $('search').value.trim().toLowerCase();
-  return notes.filter(n => n.kind === category && [n.id, n.title, n.topic, n.summary, ...n.tags, fullText?.[n.id] || ''].join(' ').toLowerCase().includes(query));
+  return notes.filter(n => (category === 'all' || n.kind === category) && (!activeTag || n.tags.includes(activeTag)) && [n.id, n.title, n.topic, n.summary, ...n.tags, fullText?.[n.id] || ''].join(' ').toLowerCase().includes(query));
 }
 
 function updateList() {
   $('filters').replaceChildren();
-  for (const [kind, label] of [['paper', 'Papers'], ['concept', 'Concepts']]) {
+  for (const [kind, label] of Object.entries(labels)) {
     const b = document.createElement('button');
     b.type = 'button'; b.textContent = label; b.setAttribute('aria-pressed', String(category === kind));
-    b.onclick = () => { category = kind; overview({ push: true }); };
+    b.onclick = () => { category = kind; activeTag = ''; overview({ push: true }); };
     $('filters').append(b);
   }
+  const tagSelect = $('tag-filter');
+  tagSelect.replaceChildren(new Option('All tags', ''));
+  const availableTags = [...new Set(notes.filter(n => category === 'all' || n.kind === category).flatMap(n => n.tags))].sort((a,b) => a.localeCompare(b));
+  for (const tag of availableTags) tagSelect.add(new Option(tag, tag));
+  if (!availableTags.includes(activeTag)) activeTag = '';
+  tagSelect.value = activeTag;
   const matches = candidates();
-  $('count').textContent = `${matches.length} ${category === 'paper' ? 'papers' : 'concept documents'}`;
+  $('count').textContent = `${matches.length} ${matches.length === 1 ? 'post' : 'posts'}`;
   $('paper-links').replaceChildren();
   for (const note of matches) {
     const b = document.createElement('button');
@@ -45,7 +53,7 @@ function updateList() {
 function reset() { revision++; observer?.disconnect(); clearMath($('detail')); }
 
 function select(note, { push = true, anchor = '', scroll = false } = {}) {
-  selected = note; category = note.kind;
+  selected = note; category = note.kind; activeTag = '';
   document.body.classList.remove('reading-overview');
   if (push) { const u = new URL(location.href); u.search = ''; u.searchParams.set('note', note.id); u.hash = anchor; history.pushState({}, '', u); }
   updateList();
@@ -59,9 +67,9 @@ async function show(note, anchor = '', scroll = false) {
   const version = revision;
   const meta = note.kind === 'paper'
     ? `<dl class="note-dates"><div><dt>Started</dt><dd>${escapeHTML(date(note.started_at))}</dd></div><div><dt>Finished</dt><dd>${note.finished_at ? escapeHTML(date(note.finished_at)) : 'In progress'}</dd></div><div><dt>Reading span</dt><dd>${note.started_at ? escapeHTML(span(note.span_seconds)) : 'Not recorded'}</dd></div></dl><p class="timing-note">Times shown in UTC+08:00. Reading span includes breaks between the start and finish.</p>`
-    : '';
+    : note.date ? `<p class="timing-note">Published ${escapeHTML(date(note.date).split(',')[0])}</p>` : '';
   // The heading renders immediately from the manifest; the body streams in after it.
-  $('detail').innerHTML = `<article class="note-article"><a class="back-library" href="papers.html">← All notes</a><div class="note-heading"><div class="paper-meta">${note.kind === 'paper' ? 'PAPER NOTE' : 'CONCEPT REFERENCE'} / ${escapeHTML(note.topic)} / ~${note.minutes} MIN READ</div><h2 class="paper-title">${escapeHTML(note.title)}</h2>${note.summary ? '<p>' + escapeHTML(note.summary) + '</p>' : ''}<div class="tags">${tags(note)}</div>${note.paper_url ? '<p class="note-source"><a href="' + escapeHTML(note.paper_url) + '" target="_blank" rel="noopener noreferrer">Original paper ↗</a></p>' : ''}${note.publication_status ? '<p class="timing-note">' + escapeHTML(note.publication_status) + '</p>' : ''}${meta}</div><div class="markdown-body loading" lang="zh-CN" aria-busy="true"><div class="scan-skeleton" aria-hidden="true"><span></span><span></span><span></span><span></span></div></div></article>`;
+  $('detail').innerHTML = `<article class="note-article"><a class="back-library" href="papers.html">← All notes</a><div class="note-heading"><div class="paper-meta">${labels[note.kind].toUpperCase()} / ${escapeHTML(note.topic)} / ~${note.minutes} MIN READ</div><h2 class="paper-title">${escapeHTML(note.title)}</h2>${note.summary ? '<p>' + escapeHTML(note.summary) + '</p>' : ''}<div class="tags">${tags(note)}</div>${note.paper_url ? '<p class="note-source"><a href="' + escapeHTML(note.paper_url) + '" target="_blank" rel="noopener noreferrer">Original paper ↗</a></p>' : ''}${note.publication_status ? '<p class="timing-note">' + escapeHTML(note.publication_status) + '</p>' : ''}${meta}</div><div class="markdown-body loading" lang="zh-CN" aria-busy="true"><div class="scan-skeleton" aria-hidden="true"><span></span><span></span><span></span><span></span></div></div></article>`;
   $('toc-links').replaceChildren();
   firstView = false;
   scramble($('detail').querySelector('.paper-meta'), 600);
@@ -119,11 +127,11 @@ function buildToc(container) {
 function overview({ push = false } = {}) {
   selected = null; reset();
   document.body.classList.add('reading-overview');
-  if (push) { const u = new URL(location.href); u.searchParams.delete('note'); if (category === 'concept') u.searchParams.set('view', 'concepts'); else u.searchParams.delete('view'); u.hash = ''; history.pushState({}, '', u); }
+  if (push) { const u = new URL(location.href); u.searchParams.delete('note'); if (category !== 'all') u.searchParams.set('view', category === 'concept' ? 'concepts' : category); else u.searchParams.delete('view'); if (activeTag) u.searchParams.set('tag', activeTag); else u.searchParams.delete('tag'); u.hash = ''; history.pushState({}, '', u); }
   updateList(); $('toc-links').replaceChildren();
   const matches = candidates(), papers = notes.filter(n => n.kind === 'paper');
   const query = $('search').value.trim();
-  $('detail').innerHTML = `<div class="overview-heading${firstView ? ' arrive' : ''}"><div class="eyebrow">FROM THE BLOG</div><h1>Blog.</h1><p>Notes on pansharpening, the methods behind it, and the concepts I return to.</p><div class="reading-stats"><span><strong>${papers.length}</strong> papers</span><span><strong>${papers.filter(n => n.finished_at).length}</strong> completed</span><span><strong>${notes.filter(n => n.kind === 'concept').length}</strong> concept reference</span></div></div><div class="collection-heading"><h2>${category === 'paper' ? 'Paper notes' : 'Concept references'}</h2><span>${matches.length} ${matches.length === 1 ? 'entry' : 'entries'}</span></div><div class="note-cards${firstView ? ' arrive' : ''}">${matches.map((note, i) => `<a class="note-card" style="--i:${i}" data-id="${escapeHTML(note.id)}" href="papers.html?note=${encodeURIComponent(note.id)}"><div class="paper-meta">${escapeHTML(note.topic)} / ${note.kind === 'paper' ? (note.finished_at ? 'COMPLETED' : 'IN PROGRESS') : 'REFERENCE'}</div><h3>${escapeHTML(note.title)}<span aria-hidden="true">↗</span></h3>${note.summary ? '<p>' + escapeHTML(note.summary) + '</p>' : ''}<div class="tags">${tags(note)}</div><div class="card-meta"><span>${note.finished_at ? escapeHTML(date(note.finished_at).split(',')[0]) : note.started_at ? escapeHTML(date(note.started_at).split(',')[0]) : 'Concept notes'}</span><span>${note.kind === 'paper' && note.started_at ? 'Span: ' + escapeHTML(span(note.span_seconds)) : 'Open notes →'}</span></div></a>`).join('')}</div>${matches.length ? '' : '<p class="empty">No matching notes. Try another keyword.</p>'}`;
+  $('detail').innerHTML = `<div class="overview-heading${firstView ? ' arrive' : ''}"><div class="eyebrow">FROM THE BLOG</div><h1>Blog.</h1><p>Research notes, technical posts, and things I’m learning.</p><div class="reading-stats"><span><strong>${papers.length}</strong> papers</span><span><strong>${notes.filter(n => n.kind === 'blog').length}</strong> blog posts</span><span><strong>${notes.filter(n => n.kind === 'concept').length}</strong> concept reference</span></div></div><div class="collection-heading"><h2>${labels[category]}</h2><span>${matches.length} ${matches.length === 1 ? 'entry' : 'entries'}</span></div><div class="note-cards${firstView ? ' arrive' : ''}">${matches.map((note, i) => `<a class="note-card" style="--i:${i}" data-id="${escapeHTML(note.id)}" href="papers.html?note=${encodeURIComponent(note.id)}"><div class="paper-meta">${labels[note.kind].toUpperCase()} / ${escapeHTML(note.topic)}</div><h3>${escapeHTML(note.title)}<span aria-hidden="true">↗</span></h3>${note.summary ? '<p>' + escapeHTML(note.summary) + '</p>' : ''}<div class="tags">${tags(note)}</div><div class="card-meta"><span>${note.date ? escapeHTML(date(note.date).split(',')[0]) : note.finished_at ? escapeHTML(date(note.finished_at).split(',')[0]) : note.started_at ? escapeHTML(date(note.started_at).split(',')[0]) : 'Concept notes'}</span><span>${note.kind === 'paper' && note.started_at ? 'Span: ' + escapeHTML(span(note.span_seconds)) : 'Open notes →'}</span></div></a>`).join('')}</div>${matches.length ? '' : '<p class="empty">No matching notes. Try another keyword.</p>'}`;
   if (firstView) scramble($('detail').querySelector('.eyebrow'), 800);
   firstView = false;
 }
@@ -131,10 +139,11 @@ function overview({ push = false } = {}) {
 function route() {
   const u = new URL(location.href), id = u.searchParams.get('note');
   $('search').value = '';
-  if (!id) { category = u.searchParams.get('view') === 'concepts' ? 'concept' : 'paper'; overview(); return; }
+  activeTag = u.searchParams.get('tag') || '';
+  if (!id) { const view = u.searchParams.get('view'); category = view === 'concepts' ? 'concept' : Object.hasOwn(labels, view) ? view : 'all'; overview(); return; }
   const note = notes.find(n => n.id === id);
   if (!note) {
-    category = 'paper'; overview();
+    category = 'all'; overview();
     const p = document.createElement('p'); p.className = 'empty'; p.textContent = 'This note was not found. Choose one from the collection.';
     $('detail').prepend(p); return;
   }
@@ -182,6 +191,8 @@ document.addEventListener('focusin', prefetch);
   addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(update); } }, { passive: true });
   new MutationObserver(update).observe($('detail'), { childList: true, subtree: true });
 })();
+
+$('tag-filter').addEventListener('change', () => { activeTag = $('tag-filter').value; overview({ push: true }); });
 
 $('search').addEventListener('input', () => {
   overview({ push: Boolean(selected) });
