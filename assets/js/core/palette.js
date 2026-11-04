@@ -5,7 +5,7 @@ import { loadManifest, loadSearch } from './data.js';
 const PAGES = [
   { group: 'Pages', title: 'Home', hint: 'Profile, background and awards', href: 'index.html' },
   { group: 'Pages', title: 'Projects', hint: 'IoT, web and graphics work', href: 'projects.html' },
-  { group: 'Pages', title: 'Reading', hint: 'Paper notes on pansharpening', href: 'papers.html' },
+  { group: 'Pages', title: 'Blog', hint: 'Research notes and concepts', href: 'papers.html' },
   { group: 'Pages', title: 'Concept references', hint: 'Standalone knowledge notes', href: 'papers.html?view=concepts' },
   { group: 'Elsewhere', title: 'GitHub', hint: 'github.com/HSTKwow', href: 'https://github.com/HSTKwow' },
   { group: 'Elsewhere', title: 'Email', hint: 'hstkwow@gmail.com', href: 'mailto:hstkwow@gmail.com' },

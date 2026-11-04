@@ -2,7 +2,7 @@
 
 My personal corner of the web for projects, research notes, and things I’m learning.
 
-[Visit the website](https://hstkwow.top/) · [Projects](https://hstkwow.top/projects.html) · [Reading](https://hstkwow.top/papers.html)
+[Visit the website](https://hstkwow.top/) · [Projects](https://hstkwow.top/projects.html) · [Blog](https://hstkwow.top/papers.html)
 
 ## About
 
