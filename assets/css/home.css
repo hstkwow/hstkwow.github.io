@@ -268,3 +268,6 @@
  .home .achievement-timeline h3 { font-size:14px; }
  .home .achievement-timeline p { font-size:12px; }
 }
+
+/* Keep temporarily hidden home sections out of the layout. */
+.home .home-section[hidden] { display:none; }
