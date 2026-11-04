@@ -4,7 +4,6 @@ import { $, escapeHTML, idle } from '../core/dom.js';
 import { loadManifest, loadNote, loadSearch } from '../core/data.js';
 import { typeset, clearMath, prefetchMath } from './math.js';
 import { openImage } from './lightbox.js';
-import { timeline, linkTimeline } from './timeline.js';
 import { scramble } from '../core/fx.js';
 
 let notes = [], firstView = true, fullText = null, category = 'paper', selected = null, observer = null, revision = 0;
@@ -124,7 +123,7 @@ function overview({ push = false } = {}) {
   updateList(); $('toc-links').replaceChildren();
   const matches = candidates(), papers = notes.filter(n => n.kind === 'paper');
   const query = $('search').value.trim();
-  $('detail').innerHTML = `<div class="overview-heading${firstView ? ' arrive' : ''}"><div class="eyebrow">FROM THE BLOG</div><h1>Blog.</h1><p>Notes on pansharpening, the methods behind it, and the concepts I return to.</p><div class="reading-stats"><span><strong>${papers.length}</strong> papers</span><span><strong>${papers.filter(n => n.finished_at).length}</strong> completed</span><span><strong>${notes.filter(n => n.kind === 'concept').length}</strong> concept reference</span></div></div>${category === 'paper' && !query ? timeline(notes, span) : ''}<div class="collection-heading"><h2>${category === 'paper' ? 'Paper notes' : 'Concept references'}</h2><span>${matches.length} ${matches.length === 1 ? 'entry' : 'entries'}</span></div><div class="note-cards${firstView ? ' arrive' : ''}">${matches.map((note, i) => `<a class="note-card" style="--i:${i}" data-id="${escapeHTML(note.id)}" href="papers.html?note=${encodeURIComponent(note.id)}"><div class="paper-meta">${escapeHTML(note.topic)} / ${note.kind === 'paper' ? (note.finished_at ? 'COMPLETED' : 'IN PROGRESS') : 'REFERENCE'}</div><h3>${escapeHTML(note.title)}<span aria-hidden="true">↗</span></h3>${note.summary ? '<p>' + escapeHTML(note.summary) + '</p>' : ''}<div class="tags">${tags(note)}</div><div class="card-meta"><span>${note.finished_at ? escapeHTML(date(note.finished_at).split(',')[0]) : note.started_at ? escapeHTML(date(note.started_at).split(',')[0]) : 'Concept notes'}</span><span>${note.kind === 'paper' && note.started_at ? 'Span: ' + escapeHTML(span(note.span_seconds)) : 'Open notes →'}</span></div></a>`).join('')}</div>${matches.length ? '' : '<p class="empty">No matching notes. Try another keyword.</p>'}`;
+  $('detail').innerHTML = `<div class="overview-heading${firstView ? ' arrive' : ''}"><div class="eyebrow">FROM THE BLOG</div><h1>Blog.</h1><p>Notes on pansharpening, the methods behind it, and the concepts I return to.</p><div class="reading-stats"><span><strong>${papers.length}</strong> papers</span><span><strong>${papers.filter(n => n.finished_at).length}</strong> completed</span><span><strong>${notes.filter(n => n.kind === 'concept').length}</strong> concept reference</span></div></div><div class="collection-heading"><h2>${category === 'paper' ? 'Paper notes' : 'Concept references'}</h2><span>${matches.length} ${matches.length === 1 ? 'entry' : 'entries'}</span></div><div class="note-cards${firstView ? ' arrive' : ''}">${matches.map((note, i) => `<a class="note-card" style="--i:${i}" data-id="${escapeHTML(note.id)}" href="papers.html?note=${encodeURIComponent(note.id)}"><div class="paper-meta">${escapeHTML(note.topic)} / ${note.kind === 'paper' ? (note.finished_at ? 'COMPLETED' : 'IN PROGRESS') : 'REFERENCE'}</div><h3>${escapeHTML(note.title)}<span aria-hidden="true">↗</span></h3>${note.summary ? '<p>' + escapeHTML(note.summary) + '</p>' : ''}<div class="tags">${tags(note)}</div><div class="card-meta"><span>${note.finished_at ? escapeHTML(date(note.finished_at).split(',')[0]) : note.started_at ? escapeHTML(date(note.started_at).split(',')[0]) : 'Concept notes'}</span><span>${note.kind === 'paper' && note.started_at ? 'Span: ' + escapeHTML(span(note.span_seconds)) : 'Open notes →'}</span></div></a>`).join('')}</div>${matches.length ? '' : '<p class="empty">No matching notes. Try another keyword.</p>'}`;
   if (firstView) scramble($('detail').querySelector('.eyebrow'), 800);
   firstView = false;
 }
@@ -190,7 +189,6 @@ $('search').addEventListener('input', () => {
 });
 addEventListener('popstate', route);
 addEventListener('hashchange', () => jump(decodeURIComponent(location.hash.slice(1))));
-linkTimeline($('detail'));
 
 try { notes = await loadManifest(); }
 catch { $('detail').innerHTML = '<p class="empty">The reading index could not be loaded. Refresh to try again.</p>'; }
