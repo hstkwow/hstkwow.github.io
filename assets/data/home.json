@@ -17,20 +17,20 @@
   ],
   "reading": [
     {
+      "id": "PINO",
+      "title": "PINO",
+      "kind": "paper",
+      "topic": "Pansharpening",
+      "summary": "从物理成像的过程考虑，把光学传感器的成像规律融入全色锐化。 传统方法通常基于简化的成像假设来注入空间细节，难以满足特定传感器的辐射测量特性。基于深度学习的方法从训练数据集中 隐式 学习传感器特征。",
+      "updated_at": "2026-11-08T19:19:29-08:00"
+    },
+    {
       "id": "Restormer",
       "title": "Restormer",
       "kind": "paper",
       "topic": "Image Restoration",
       "summary": "传统的Transformer虽然可以联系远距离的位置，但计算复杂度随空间分辨率呈二次增长。 传统的CNN虽然高效，感受野有限，难以根据输入内容自适应调整。 验证了渐进式学习策略对Restormer的有效性，即训练初期使用较小的图像块和较大的批次，随着训练的推荐，逐渐增大图像块尺寸，同时减小批次大小。",
       "updated_at": "2026-10-31T13:51:54+08:00"
-    },
-    {
-      "id": "SGDiff",
-      "title": "SGDiff",
-      "kind": "paper",
-      "topic": "Pansharpening",
-      "summary": "提升模型的泛化能力，同一个模型适应不同的卫星，不同的传感器波段，光谱响应和成像特点。 利用双粒度语义信息（场景级和区域级）引导扩散模型。",
-      "updated_at": "2026-10-29T22:18:28+08:00"
     }
   ]
 }

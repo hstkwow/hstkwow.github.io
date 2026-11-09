@@ -1,4 +1,5 @@
 {
-  "source_commit": "b2542624708228ab0f962ced439a14234dc37a95",
-  "source_repository": "hstkwow/hstkwow-site-source"
+  "source_commit": "7f8a50c093510e21bd2b6eaf7faaecbfa6edbcd7",
+  "source_repository": "hstkwow/hstkwow-site-source",
+  "build_run": "https://github.com/hstkwow/hstkwow-site-source/actions/runs/42564003246"
 }
