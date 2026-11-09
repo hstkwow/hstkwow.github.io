@@ -651,8 +651,6 @@ mjx-container[display="true"] {
 }
 
 /* Types and topic tags share the compact library controls. */
-#tag-filter { display:block; width:100%; max-width:100%; margin:0 0 20px; padding:9px 10px; border:1px solid var(--line); border-radius:0; color:var(--ink); background:var(--paper); font:inherit; font-size:13px; }
-#tag-filter:focus-visible { outline:1px solid var(--accent); outline-offset:3px; }
 
 /* Compact article heading: group source and dates, keep the body close. */
 .note-article .back-library { margin-bottom:14px; font:12px/1.5 system-ui,sans-serif; }
@@ -686,7 +684,6 @@ body[data-page="Blog"] .filters button { display:flex; justify-content:space-bet
 body[data-page="Blog"] .filters button:hover { background:transparent; color:var(--ink); }
 body[data-page="Blog"] .filters button[aria-pressed="true"] { border-left-color:var(--accent); color:var(--accent); background:color-mix(in srgb,var(--accent) 5%,transparent); }
 .filter-count { font-size:10px; font-variant-numeric:tabular-nums; color:var(--muted); }
-body[data-page="Blog"] #tag-filter { margin:0 0 14px; padding:7px 8px; font:400 12px/1.6 system-ui,sans-serif; border-color:color-mix(in srgb,var(--line) 60%,transparent); }
 body[data-page="Blog"] .library .count { margin:0; font:400 11px/1.6 system-ui,sans-serif; color:var(--muted); }
 body[data-page="Blog"] .paper-links { margin-top:12px; padding-top:10px; border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent); gap:2px; }
 body[data-page="Blog"] .paper-links button { padding:7px 9px; min-height:32px; font:450 13px/1.5 system-ui,sans-serif; color:var(--muted); background:transparent; transition:none; }
@@ -694,3 +691,9 @@ body[data-page="Blog"] .paper-links button:hover { color:var(--ink); background:
 body[data-page="Blog"] .paper-links button[aria-current="true"] { color:var(--accent); border-left-color:var(--accent); background:transparent; }
 body[data-page="Blog"] .library button:focus-visible { outline:1px solid var(--accent); outline-offset:-1px; }
 @media(max-width:760px) { body[data-page="Blog"] .library { padding-right:0; } body[data-page="Blog"] .filters { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
+/* Tags read as a small text index rather than a form field. */
+body[data-page="Blog"] #tag-filter { display:flex; flex-wrap:wrap; gap:4px 14px; margin:0 0 16px; padding:0; border:0; }
+body[data-page="Blog"] #tag-filter button { max-width:100%; padding:3px 0; margin:0; border:0; border-bottom:1px solid transparent; border-radius:0; background:none; color:var(--muted); font:400 11px/1.7 system-ui,sans-serif; overflow-wrap:anywhere; text-align:left; transition:none; }
+body[data-page="Blog"] #tag-filter button:hover { background:none; color:var(--muted); }
+body[data-page="Blog"] #tag-filter button[aria-pressed="true"] { color:var(--ink); border-bottom-color:var(--accent); }

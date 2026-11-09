@@ -35,12 +35,17 @@ function updateList() {
     b.onclick = () => { category = kind; activeTag = ''; overview({ push: true }); };
     $('filters').append(b);
   }
-  const tagSelect = $('tag-filter');
-  tagSelect.replaceChildren(new Option('All tags', ''));
+  const tagList = $('tag-filter');
   const availableTags = [...new Set(notes.filter(n => category === 'all' || n.kind === category).flatMap(n => n.tags))].sort((a,b) => a.localeCompare(b));
-  for (const tag of availableTags) tagSelect.add(new Option(tag, tag));
   if (!availableTags.includes(activeTag)) activeTag = '';
-  tagSelect.value = activeTag;
+  tagList.replaceChildren();
+  for (const tag of ['', ...availableTags]) {
+    const button = document.createElement('button');
+    button.type = 'button'; button.textContent = tag || 'All tags';
+    button.setAttribute('aria-pressed', String(activeTag === tag));
+    button.onclick = () => { activeTag = tag; overview({ push: true }); };
+    tagList.append(button);
+  }
   const matches = candidates();
   $('count').textContent = `${matches.length} ${matches.length === 1 ? 'post' : 'posts'}`;
   $('paper-links').replaceChildren();
@@ -195,7 +200,6 @@ document.addEventListener('focusin', prefetch);
   new MutationObserver(update).observe($('detail'), { childList: true, subtree: true });
 })();
 
-$('tag-filter').addEventListener('change', () => { activeTag = $('tag-filter').value; overview({ push: true }); });
 
 $('search').addEventListener('input', () => {
   overview({ push: Boolean(selected) });
