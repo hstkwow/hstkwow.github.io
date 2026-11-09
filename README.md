@@ -1,17 +1,9 @@
-# HSTK · Personal Website
+# HSTK · Website
 
-My personal corner of the web for projects, research notes, and things I’m learning.
+[Visit hstkwow.top](https://hstkwow.top/) · [Blog](https://hstkwow.top/papers.html)
 
-[Visit the website](https://hstkwow.top/) · [Projects](https://hstkwow.top/projects.html) · [Blog](https://hstkwow.top/papers.html)
+This repository contains the **generated website**, automatically published by GitHub Actions.
 
-## About
+Website source, Markdown posts, and build scripts are maintained separately in `hstkwow/hstkwow-site-source` (private). Edit the source repository; direct edits here may be overwritten by the next publication.
 
-I’m Sun Tao, a graduate student at Tiangong University interested in computer vision. This site brings together my background, selected projects, and research notes, technical posts, and ideas.
-
-## The site
-
-- An editorial layout with light and dark themes and an interactive Earth.
-- Selected GitHub projects and recently updated reading notes.
-- Markdown posts organized by type and tags, with equations and figures.
-
-Built with **HTML, CSS, JavaScript, and Python**, and published through **GitHub Pages**.
+[`build-info.json`](build-info.json) records the source revision behind this version.
