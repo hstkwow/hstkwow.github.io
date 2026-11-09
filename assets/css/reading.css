@@ -676,3 +676,21 @@ mjx-container[display="true"] {
  .note-info { gap:10px 20px; margin-top:12px; }
  .note-article .note-dates { gap:6px 18px; }
 }
+
+/* Compact blog library with consistent text and quiet selection states. */
+body[data-page="Blog"] .library { padding-right:16px; }
+body[data-page="Blog"] .library .label { margin:0 0 7px; font:500 10px/1.5 system-ui,sans-serif; letter-spacing:.11em; }
+body[data-page="Blog"] .library input { margin-bottom:18px; padding:8px 0; font:400 13px/1.6 system-ui,sans-serif; }
+body[data-page="Blog"] .filters { display:grid; grid-template-columns:minmax(0,1fr); gap:2px; margin-bottom:18px; }
+body[data-page="Blog"] .filters button { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:6px 9px; min-height:32px; font:400 12px/1.5 system-ui,sans-serif; border:0; border-left:2px solid transparent; color:var(--muted); background:transparent; transition:none; }
+body[data-page="Blog"] .filters button:hover { background:transparent; color:var(--ink); }
+body[data-page="Blog"] .filters button[aria-pressed="true"] { border-left-color:var(--accent); color:var(--accent); background:color-mix(in srgb,var(--accent) 5%,transparent); }
+.filter-count { font-size:10px; font-variant-numeric:tabular-nums; color:var(--muted); }
+body[data-page="Blog"] #tag-filter { margin:0 0 14px; padding:7px 8px; font:400 12px/1.6 system-ui,sans-serif; border-color:color-mix(in srgb,var(--line) 60%,transparent); }
+body[data-page="Blog"] .library .count { margin:0; font:400 11px/1.6 system-ui,sans-serif; color:var(--muted); }
+body[data-page="Blog"] .paper-links { margin-top:12px; padding-top:10px; border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent); gap:2px; }
+body[data-page="Blog"] .paper-links button { padding:7px 9px; min-height:32px; font:450 13px/1.5 system-ui,sans-serif; color:var(--muted); background:transparent; transition:none; }
+body[data-page="Blog"] .paper-links button:hover { color:var(--ink); background:transparent; }
+body[data-page="Blog"] .paper-links button[aria-current="true"] { color:var(--accent); border-left-color:var(--accent); background:transparent; }
+body[data-page="Blog"] .library button:focus-visible { outline:1px solid var(--accent); outline-offset:-1px; }
+@media(max-width:760px) { body[data-page="Blog"] .library { padding-right:0; } body[data-page="Blog"] .filters { grid-template-columns:repeat(2,minmax(0,1fr)); } }

@@ -28,7 +28,10 @@ function updateList() {
   $('filters').replaceChildren();
   for (const [kind, label] of Object.entries(labels)) {
     const b = document.createElement('button');
-    b.type = 'button'; b.textContent = label; b.setAttribute('aria-pressed', String(category === kind));
+    b.type = 'button'; b.setAttribute('aria-pressed', String(category === kind));
+    const text = document.createElement('span'); text.textContent = label;
+    const count = document.createElement('span'); count.className = 'filter-count'; count.textContent = notes.filter(n => kind === 'all' || n.kind === kind).length;
+    b.append(text, count);
     b.onclick = () => { category = kind; activeTag = ''; overview({ push: true }); };
     $('filters').append(b);
   }
