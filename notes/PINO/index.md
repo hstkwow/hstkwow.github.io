@@ -1,8 +1,8 @@
 ---
 title: "PINO"
 topic: "Pansharpening"
-started_at: "2026-11-5T20:17:00+08:00"
-finished_at: "2026-11-9T11:15:00+08:00"
+started_at: "2026-11-05T20:17:00+08:00"
+finished_at: "2026-11-09T11:15:00+08:00"
 paper_url: "https://proceedings.neurips.cc/paper_files/paper/2025/hash/89af8e4eb696738f2c9e589522968a09-Abstract-Conference.html"
 ---
 
