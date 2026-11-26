@@ -16,6 +16,7 @@ const HOME = { lat: 39.07, lon: 117.10, name: 'TIANJIN' };
 const DEFAULT_YAW = -HOME.lon * RAD + 0.35;
 const DEFAULT_PITCH = 0.42;
 const DOT_BUCKETS = 12;
+const INTRO_SPEED = 2;             // play the opening draw-in at double speed (~1.2s total)
 
 // Precompute (lon, sin(lat), cos(lat)) for each land point once so per-frame projection avoids
 // redundant trig on latitude across thousands of dots.
@@ -468,7 +469,7 @@ export function initGlobe(figure) {
     if (!state.visible) return;
     const dt = Math.min(0.05, (now - state.last) / 1000);
     state.last = now;
-    if (!still) { state.t += dt; state.intro += dt; }
+    if (!still) { state.t += dt; state.intro += dt * INTRO_SPEED; }
     if (!state.drag) { state.yaw += state.spin * dt; state.spin *= Math.pow(0.04, dt); }
     if (state.hover) Object.assign(state.hover, unproject(state.hover.x, state.hover.y) || { lat: null, lon: null });
     draw();
