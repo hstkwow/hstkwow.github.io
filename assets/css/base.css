@@ -335,6 +335,28 @@ kbd {
   stroke: none;
 }
 
+/* Search trigger shows its shortcut on wide screens; collapses to the icon on small ones. */
+.palette-trigger {
+  grid-auto-flow: column;
+  gap: 7px;
+  width: auto;
+  padding: 0 7px 0 9px;
+  border-radius: 999px;
+}
+
+.palette-hint {
+  padding: 2px 6px;
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  font: 500 10.5px/1.4 var(--font-mono);
+  letter-spacing: .02em;
+  color: var(--muted);
+}
+
+.palette-trigger:hover .palette-hint {
+  color: var(--ink);
+}
+
 .icon-button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
@@ -918,6 +940,15 @@ footer a {
 }
 
 @media (max-width: 760px) {
+  .palette-trigger {
+    width: 34px;
+    padding: 0;
+  }
+
+  .palette-hint {
+    display: none;
+  }
+
   :root {
     --masthead-offset: 70px;
   }
@@ -995,8 +1026,17 @@ footer a {
   }
 
   .icon-button {
+    position: relative;
     width: 30px;
     height: 30px;
+  }
+
+  /* Keep the compact look but give each control a ~44px touch target. */
+  .icon-button::after,
+  .masthead nav a::after {
+    content: "";
+    position: absolute;
+    inset: -7px -1px;
   }
 
   .masthead .nav-tools a.icon-button {

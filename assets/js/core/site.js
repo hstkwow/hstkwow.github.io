@@ -18,6 +18,9 @@ import { initPalette } from './palette.js';
   }
   set(document.documentElement.classList.contains('dark'), false);
   button.addEventListener('click', () => set(!document.documentElement.classList.contains('dark'), true));
+  // Follow the OS theme live until the visitor picks one explicitly.
+  const stored = () => { try { return localStorage.getItem('theme'); } catch { return null; } };
+  matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => { if (!stored()) set(!e.matches, false); });
 })();
 
 // Floating capsule navigation indicator and scroll elevation.
