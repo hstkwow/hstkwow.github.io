@@ -1,17 +1,18 @@
-// Shared initialization for Home, Projects and Reading.
+// Shared initialization for Home, Projects, and Blog.
 import { $, reducedMotion } from './dom.js';
 import { initPalette } from './palette.js';
 
-// Theme: the inline <head> script applies the stored choice before first paint; the button
-// shows a sun or a moon through CSS.
+// Theme toggle + browser theme-color synchronization.
 (() => {
   const button = $('theme');
   if (!button) return;
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
   function set(dark, store) {
     document.documentElement.classList.toggle('dark', dark);
     button.setAttribute('aria-pressed', String(dark));
     button.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
     button.title = dark ? 'Light theme' : 'Dark theme';
+    if (metaTheme) metaTheme.content = dark ? '#1d1e1c' : '#f4f0e7';
     if (store) try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch {}
     document.dispatchEvent(new CustomEvent('themechange', { detail: { dark } }));
   }
@@ -19,7 +20,7 @@ import { initPalette } from './palette.js';
   button.addEventListener('click', () => set(!document.documentElement.classList.contains('dark'), true));
 })();
 
-// Capsule navigation: a highlight slides to the hovered link and settles back on the current page.
+// Floating capsule navigation indicator and scroll elevation.
 (() => {
   const masthead = document.querySelector('.masthead');
   const nav = masthead?.querySelector('nav');
@@ -38,12 +39,25 @@ import { initPalette } from './palette.js';
   nav.addEventListener('focusin', e => { const a = e.target.closest('a'); if (a) moveTo(a); });
   nav.addEventListener('pointerleave', () => moveTo(current));
   nav.addEventListener('focusout', e => { if (!nav.contains(e.relatedTarget)) moveTo(current); });
-  // Place the highlight once fonts have settled so its width matches the link.
   moveTo(current, true);
   document.fonts?.ready.then(() => moveTo(current, true));
   addEventListener('resize', () => moveTo(current, true));
-  // The capsule gains a little depth once the page has scrolled beneath it.
-  const onScroll = () => masthead.classList.toggle('scrolled', scrollY > 8);
+
+  // Quiet back-to-top button for long pages.
+  const topBtn = document.createElement('button');
+  topBtn.type = 'button';
+  topBtn.className = 'back-to-top';
+  topBtn.setAttribute('aria-label', 'Back to top');
+  topBtn.title = 'Back to top';
+  topBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
+  topBtn.addEventListener('click', () => scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' }));
+  document.body.append(topBtn);
+
+  const onScroll = () => {
+    const y = scrollY;
+    masthead.classList.toggle('scrolled', y > 8);
+    topBtn.classList.toggle('visible', y > 420);
+  };
   addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 })();

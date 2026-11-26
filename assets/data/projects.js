@@ -51,6 +51,7 @@ export default [
     "topic": "Computer Graphics",
     "title": "Software Rasterizer",
     "date": "Lab project",
+    "repo": "https://github.com/hstkwow/Tinyrenderer",
     "tags": [
       "C / C++",
       "Rasterization",
