@@ -152,9 +152,5 @@ export function initPalette() {
     }
   });
   const trigger = document.getElementById('palette-open');
-  if (trigger && !/Mac|iPhone|iPad/.test(navigator.platform)) {
-    trigger.title = 'Search  Ctrl+K';
-    const hint = trigger.querySelector('.palette-hint');
-    if (hint) hint.textContent = 'Ctrl K';
-  }
+  if (trigger && !/Mac|iPhone|iPad/.test(navigator.platform)) trigger.title = 'Search  Ctrl+K';
 }
